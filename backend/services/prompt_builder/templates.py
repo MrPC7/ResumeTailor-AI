@@ -119,43 +119,55 @@ _RESUME_CUSTOMIZATION_SYSTEM = (
 )
 
 _RESUME_CUSTOMIZATION_USER = """\
-Tailor the resume below to better match the job description analysis provided.
+Tailor the resume below to match the job description analysis and gap analysis provided.
 
-Instructions:
-- Rewrite the summary to align with the role, seniority, and responsibilities in the JD.
-- Reorder and emphasise skills that appear in requiredSkills and preferredSkills.
-- Rewrite experience descriptions to highlight achievements relevant to the JD responsibilities.
-- Do NOT add skills, companies, roles, or qualifications that are not already present in the resume.
-- Return the full resume JSON with the same structure — only field values may change.
+Critical Integrity Rules — NEVER violate under any circumstance:
+- NEVER add skills, tools, or technologies that are not already present in the original resume.
+- NEVER fabricate work experience, job titles, companies, durations, or achievements.
+- NEVER invent projects, certifications, or degrees.
+- NEVER change name, email, phone, company, position, duration, institution, degree, year, or project technologies.
+- You may ONLY rewrite descriptive text — not invent new facts.
 
-Required JSON structure (same as input resume):
+Customization Tasks (apply all five):
+1. Rewrite summary: Align it with the role title, seniority, and top responsibilities from the JD.
+2. Reorder skills: Move requiredSkills and preferredSkills that already exist in the resume to the front.
+3. Optimize experience bullets: Rewrite descriptions to surface JD-relevant achievements; incorporate atsKeywords naturally where factually accurate.
+4. Improve ATS alignment: Ensure the most impactful atsKeywords appear in the summary and experience descriptions where truthful.
+5. Suggest missing keywords: For each skill in missingSkills, add a specific suggestion the candidate can act on.
+
+Required JSON structure:
 {{
-  "name": "unchanged",
-  "email": "unchanged",
-  "phone": "unchanged",
-  "summary": "rewritten to target the role",
-  "skills": ["reordered — most relevant skills first"],
-  "experience": [
-    {{
-      "company": "unchanged",
-      "position": "unchanged",
-      "duration": "unchanged",
-      "description": "rewritten to emphasise JD-relevant achievements"
-    }}
-  ],
-  "education": [
-    {{
-      "institution": "unchanged",
-      "degree": "unchanged",
-      "year": "unchanged"
-    }}
-  ],
-  "projects": [
-    {{
-      "name": "unchanged",
-      "description": "rewritten to highlight JD-relevant aspects",
-      "technologies": ["unchanged"]
-    }}
+  "customizedResume": {{
+    "name": "unchanged",
+    "email": "unchanged",
+    "phone": "unchanged",
+    "summary": "rewritten to target the role and seniority",
+    "skills": ["reordered — requiredSkills and preferredSkills from the JD listed first, rest follow"],
+    "experience": [
+      {{
+        "company": "unchanged",
+        "position": "unchanged",
+        "duration": "unchanged",
+        "description": "rewritten to emphasise JD-relevant responsibilities and achievements"
+      }}
+    ],
+    "education": [
+      {{
+        "institution": "unchanged",
+        "degree": "unchanged",
+        "year": "unchanged"
+      }}
+    ],
+    "projects": [
+      {{
+        "name": "unchanged",
+        "description": "rewritten to highlight JD-relevant aspects where accurate",
+        "technologies": ["unchanged"]
+      }}
+    ]
+  }},
+  "suggestions": [
+    "Concise, actionable suggestion — one per missing skill or improvement opportunity"
   ]
 }}
 
@@ -163,7 +175,10 @@ Resume JSON:
 {resume_json}
 
 Job Description Analysis JSON:
-{jd_json}"""
+{jd_json}
+
+Gap Analysis JSON:
+{gap_json}"""
 
 
 # ---------------------------------------------------------------------------
