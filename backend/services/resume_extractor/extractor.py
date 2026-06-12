@@ -3,12 +3,12 @@ from __future__ import annotations
 from pydantic import ValidationError
 
 from schemas.extract_resume import StructuredResume
+from services.prompt_builder import PromptType, prompt_builder
 from services.resume_extractor.gemini_client import (
     GeminiAPIError,
     GeminiClient,
     GeminiParseError,
 )
-from services.resume_extractor.prompt_builder import build_extraction_prompt
 
 
 class ResumeExtractionError(Exception):
@@ -21,7 +21,7 @@ class ResumeExtractor:
         self._max_retries = max(1, max_retries)
 
     async def extract(self, raw_text: str) -> StructuredResume:
-        prompt = build_extraction_prompt(raw_text)
+        prompt = prompt_builder.build(PromptType.RESUME_EXTRACTION, raw_text=raw_text).to_single_prompt()
         last_error: Exception | None = None
 
         for attempt in range(1, self._max_retries + 1):
