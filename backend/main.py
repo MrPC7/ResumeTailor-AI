@@ -9,6 +9,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="google.api_cor
 
 from api.analyze_jd import router as analyze_jd_router
 from api.extract_resume import router as extract_resume_router
+from api.gap_analysis import router as gap_analysis_router
 from api.match_score import router as match_score_router
 from api.parse_resume import router as parse_resume_router
 from api.router import api_router
@@ -37,3 +38,4 @@ app.include_router(parse_resume_router, prefix="/api")
 app.include_router(extract_resume_router, prefix="/api")
 app.include_router(analyze_jd_router, prefix="/api")
 app.include_router(match_score_router, prefix="/api")
+app.include_router(gap_analysis_router, prefix="/api")
