@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
     TEMP_UPLOAD_DIR: str = "./tmp/uploads"
     MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MAX_RETRIES: int = 2
 
 
 settings = Settings()
