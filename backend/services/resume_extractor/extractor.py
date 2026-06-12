@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from pydantic import ValidationError
 
 from schemas.extract_resume import StructuredResume
@@ -9,6 +11,8 @@ from services.resume_extractor.gemini_client import (
     GeminiClient,
     GeminiParseError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ResumeExtractionError(Exception):
@@ -27,12 +31,22 @@ class ResumeExtractor:
         for attempt in range(1, self._max_retries + 1):
             try:
                 raw_json = await self._client.generate_json(prompt)
+
+                # Gemini sometimes wraps the result in a top-level key
+                if len(raw_json) == 1:
+                    only_value = next(iter(raw_json.values()))
+                    if isinstance(only_value, dict):
+                        raw_json = only_value
+
+                logger.info("Gemini response keys (attempt %d): %s", attempt, list(raw_json.keys()))
                 return StructuredResume.model_validate(raw_json)
             except GeminiAPIError:
-                # Non-retryable: API key missing, quota exceeded, network failure.
                 raise
             except (GeminiParseError, ValidationError) as exc:
-                # Retryable: malformed JSON or schema mismatch from Gemini.
+                logger.warning(
+                    "Extraction attempt %d/%d failed: %s — %s",
+                    attempt, self._max_retries, type(exc).__name__, exc,
+                )
                 last_error = exc
                 if attempt == self._max_retries:
                     break

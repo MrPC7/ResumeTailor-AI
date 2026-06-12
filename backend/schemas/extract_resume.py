@@ -2,22 +2,28 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExperienceItem(BaseModel):
-    company: str
-    position: str
-    duration: str
-    description: str
+    model_config = ConfigDict(extra="ignore")
+
+    company: str = ""
+    position: str = ""
+    duration: str = ""
+    description: str = ""
 
 
 class EducationItem(BaseModel):
-    institution: str
-    degree: str
-    year: str
+    model_config = ConfigDict(extra="ignore")
+
+    institution: str = ""
+    degree: str = ""
+    year: str = ""
 
 
 class ProjectItem(BaseModel):
-    name: str
-    description: str
-    technologies: list[str]
+    model_config = ConfigDict(extra="ignore")
+
+    name: str = ""
+    description: str = ""
+    technologies: list[str] = []
 
 
 # Internal model used to validate the raw JSON returned by Gemini.
@@ -38,7 +44,7 @@ class StructuredResume(BaseModel):
 class ExtractResumeRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    raw_text: str = Field(alias="rawText", min_length=1, max_length=50_000)
+    raw_text: str = Field(alias="rawText", min_length=1, max_length=100_000)
 
 
 class ExtractResumeResponse(BaseModel):
