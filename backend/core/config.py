@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     API_V1_PREFIX: str = "/api/v1"
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
+    TEMP_UPLOAD_DIR: str = "./tmp/uploads"
+    MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024
 
 
 settings = Settings()

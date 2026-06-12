@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.router import api_router
+from api.upload import router as upload_router
 from core.config import settings
 
 app = FastAPI(
@@ -21,3 +22,4 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+app.include_router(upload_router, prefix="/api")
