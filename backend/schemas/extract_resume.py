@@ -1,4 +1,19 @@
-from pydantic import BaseModel, ConfigDict, Field
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+def _coerce_str(v: object) -> str:
+    """Gemini sometimes returns lists or dicts for string fields."""
+    if isinstance(v, str):
+        return v
+    if isinstance(v, list):
+        return "; ".join(str(item) for item in v)
+    if isinstance(v, dict):
+        return "; ".join(f"{k}: {val}" for k, val in v.items())
+    if v is None:
+        return ""
+    return str(v)
 
 
 class ExperienceItem(BaseModel):
@@ -9,6 +24,11 @@ class ExperienceItem(BaseModel):
     duration: str = ""
     description: str = ""
 
+    @field_validator("company", "position", "duration", "description", mode="before")
+    @classmethod
+    def coerce_strings(cls, v: object) -> str:
+        return _coerce_str(v)
+
 
 class EducationItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -17,6 +37,11 @@ class EducationItem(BaseModel):
     degree: str = ""
     year: str = ""
 
+    @field_validator("institution", "degree", "year", mode="before")
+    @classmethod
+    def coerce_strings(cls, v: object) -> str:
+        return _coerce_str(v)
+
 
 class ProjectItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -24,6 +49,11 @@ class ProjectItem(BaseModel):
     name: str = ""
     description: str = ""
     technologies: list[str] = []
+
+    @field_validator("name", "description", mode="before")
+    @classmethod
+    def coerce_strings(cls, v: object) -> str:
+        return _coerce_str(v)
 
 
 # Internal model used to validate the raw JSON returned by Gemini.
@@ -39,6 +69,13 @@ class StructuredResume(BaseModel):
     experience: list[ExperienceItem] = []
     education: list[EducationItem] = []
     projects: list[ProjectItem] = []
+
+    @field_validator("name", "email", "phone", "summary", mode="before")
+    @classmethod
+    def coerce_optional_strings(cls, v: object) -> str | None:
+        if v is None:
+            return None
+        return _coerce_str(v)
 
 
 class ExtractResumeRequest(BaseModel):
