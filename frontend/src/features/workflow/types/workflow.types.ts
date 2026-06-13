@@ -1,6 +1,4 @@
-import type { ResumeDiff } from "@/features/resume-diff/types/diff.types";
-
-export type WorkflowStep = "upload" | "jd" | "analyze" | "preview" | "download";
+export type WorkflowStep = "upload" | "jd" | "optimize" | "download";
 
 export type ExperienceItem = {
   company: string;
@@ -41,13 +39,6 @@ export type AnalyzedJD = {
   responsibilities: string[];
 };
 
-export type MatchScore = {
-  score: number;
-  skillScore: number;
-  keywordScore: number;
-  experienceScore: number;
-};
-
 export type GapAnalysis = {
   matchedSkills: string[];
   missingSkills: string[];
@@ -64,10 +55,35 @@ export type JDStepData = {
   analyzedJD: AnalyzedJD;
 };
 
-export type AnalysisResult = {
-  matchScore: MatchScore;
-  gapAnalysis: GapAnalysis;
+export type ATSScores = {
+  skills: number;
+  keywords: number;
+  experience: number;
+  education: number;
+};
+
+export type RecommendationGroup = {
+  title: string;
+  items: string[];
+};
+
+export type ATSAnalysisResult = {
+  overallScore: number;
+  scores: ATSScores;
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  recommendations: RecommendationGroup[];
+};
+
+export type ATSComparisonResult = {
+  beforeScore: number;
+  afterScore: number;
+  improvement: number;
+  before: ATSAnalysisResult;
+  after: ATSAnalysisResult;
+};
+
+export type OptimizeResult = {
   customizedResume: StructuredResume;
-  suggestions: string[];
-  diff: ResumeDiff;
+  atsComparison: ATSComparisonResult;
 };

@@ -1,9 +1,8 @@
 "use client";
 
-import { StepAnalyze } from "@/features/workflow/components/StepAnalyze";
 import { StepDownload } from "@/features/workflow/components/StepDownload";
 import { StepJD } from "@/features/workflow/components/StepJD";
-import { StepPreview } from "@/features/workflow/components/StepPreview";
+import { StepOptimize } from "@/features/workflow/components/StepOptimize";
 import { StepUpload } from "@/features/workflow/components/StepUpload";
 import { WorkflowStepper } from "@/features/workflow/components/WorkflowStepper";
 import { useWorkflow } from "@/features/workflow/hooks/use-workflow";
@@ -33,29 +32,20 @@ export default function Home() {
             <StepJD resume={workflow.uploadData.resume} onComplete={workflow.completeJD} />
           )}
 
-          {workflow.step === "analyze" && workflow.uploadData && workflow.jdData && (
-            <StepAnalyze
+          {workflow.step === "optimize" && workflow.uploadData && workflow.jdData && (
+            <StepOptimize
               resume={workflow.uploadData.resume}
               analyzedJD={workflow.jdData.analyzedJD}
-              onComplete={workflow.completeAnalysis}
+              onComplete={workflow.completeOptimize}
+              onReset={workflow.reset}
             />
           )}
 
-          {workflow.step === "preview" &&
-            workflow.uploadData &&
-            workflow.jdData &&
-            workflow.analysisResult && (
-              <StepPreview
-                resume={workflow.uploadData.resume}
-                analyzedJD={workflow.jdData.analyzedJD}
-                analysisResult={workflow.analysisResult}
-                onContinue={workflow.goToDownload}
-                onReset={workflow.reset}
-              />
-            )}
-
-          {workflow.step === "download" && workflow.analysisResult && (
-            <StepDownload analysisResult={workflow.analysisResult} onReset={workflow.reset} />
+          {workflow.step === "download" && workflow.optimizeResult && (
+            <StepDownload
+              optimizeResult={workflow.optimizeResult}
+              onReset={workflow.reset}
+            />
           )}
         </div>
       </div>

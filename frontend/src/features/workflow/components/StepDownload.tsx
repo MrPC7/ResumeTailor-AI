@@ -3,36 +3,26 @@
 import { useState } from "react";
 import { Check, ClipboardCopy, Download, RotateCcw } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { ATSComparisonCard } from "@/components/ats/ATSComparisonCard";
 import {
   downloadBlob,
   exportResume,
   type ExportFormat,
 } from "@/features/workflow/services/export-resume.service";
-import type { AnalysisResult } from "@/features/workflow/types/workflow.types";
-import { cn } from "@/lib/utils";
+import type { OptimizeResult } from "@/features/workflow/types/workflow.types";
 
 type Props = {
-  analysisResult: AnalysisResult;
+  optimizeResult: OptimizeResult;
   onReset: () => void;
 };
 
-function scoreColor(score: number): string {
-  if (score >= 80) return "text-emerald-600";
-  if (score >= 60) return "text-amber-600";
-  return "text-red-600";
-}
-
-export function StepDownload({ analysisResult, onReset }: Props) {
-  const { matchScore, gapAnalysis, customizedResume } = analysisResult;
+export function StepDownload({ optimizeResult, onReset }: Props) {
+  const { customizedResume, atsComparison } = optimizeResult;
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState<ExportFormat | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
-
-  const jsonString = JSON.stringify(customizedResume, null, 2);
 
   const handleDownload = async (format: ExportFormat) => {
     try {
@@ -52,91 +42,27 @@ export function StepDownload({ analysisResult, onReset }: Props) {
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(jsonString);
+    await navigator.clipboard.writeText(JSON.stringify(customizedResume, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div className="space-y-6">
-      {/* Summary card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resume Ready</CardTitle>
-          <CardDescription>
-            Your resume has been customized for{" "}
-            <span className="font-medium text-slate-900">{customizedResume.name ?? "you"}</span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Score summary */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { label: "ATS Score", value: matchScore.score },
-              { label: "Skills", value: matchScore.skillScore },
-              { label: "Keywords", value: matchScore.keywordScore },
-              { label: "Experience", value: matchScore.experienceScore },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center"
-              >
-                <p className={cn("text-2xl font-bold tabular-nums", scoreColor(item.value))}>
-                  {item.value}
-                </p>
-                <p className="mt-0.5 text-xs text-slate-500">{item.label}</p>
-              </div>
-            ))}
-          </div>
-
-          <Separator />
-
-          {/* Skill summary */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="mb-1.5 text-xs font-medium text-slate-500">
-                Matched ({gapAnalysis.matchedSkills.length})
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {gapAnalysis.matchedSkills.slice(0, 6).map((s) => (
-                  <Badge
-                    key={s}
-                    className="bg-emerald-100 text-xs text-emerald-800 hover:bg-emerald-100"
-                  >
-                    {s}
-                  </Badge>
-                ))}
-                {gapAnalysis.matchedSkills.length > 6 && (
-                  <Badge variant="secondary" className="text-xs">
-                    +{gapAnalysis.matchedSkills.length - 6}
-                  </Badge>
-                )}
-              </div>
-            </div>
-            <div>
-              <p className="mb-1.5 text-xs font-medium text-slate-500">
-                Missing ({gapAnalysis.missingSkills.length})
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {gapAnalysis.missingSkills.slice(0, 6).map((s) => (
-                  <Badge key={s} className="bg-red-100 text-xs text-red-800 hover:bg-red-100">
-                    {s}
-                  </Badge>
-                ))}
-                {gapAnalysis.missingSkills.length === 0 && (
-                  <p className="text-xs text-emerald-600">No gaps!</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* After score comparison */}
+      <ATSComparisonCard comparison={atsComparison} />
 
       {/* Download options */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Download Customized Resume</CardTitle>
-          <CardDescription>Download your tailored resume in professional formats</CardDescription>
+          <CardTitle className="text-base">Download Your Optimized Resume</CardTitle>
+          <CardDescription>
+            Your resume for{" "}
+            <span className="font-medium text-slate-900">
+              {customizedResume.name ?? "you"}
+            </span>{" "}
+            is ready to download.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Button
@@ -165,7 +91,7 @@ export function StepDownload({ analysisResult, onReset }: Props) {
             ) : (
               <>
                 <ClipboardCopy className="mr-2 h-4 w-4" />
-                Copy to Clipboard
+                Copy JSON to Clipboard
               </>
             )}
           </Button>

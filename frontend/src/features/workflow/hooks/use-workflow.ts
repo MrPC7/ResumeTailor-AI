@@ -2,8 +2,8 @@
 
 import { useCallback, useState } from "react";
 import type {
-  AnalysisResult,
   JDStepData,
+  OptimizeResult,
   UploadStepData,
   WorkflowStep,
 } from "@/features/workflow/types/workflow.types";
@@ -12,14 +12,14 @@ type WorkflowState = {
   step: WorkflowStep;
   uploadData: UploadStepData | null;
   jdData: JDStepData | null;
-  analysisResult: AnalysisResult | null;
+  optimizeResult: OptimizeResult | null;
 };
 
 const INITIAL: WorkflowState = {
   step: "upload",
   uploadData: null,
   jdData: null,
-  analysisResult: null,
+  optimizeResult: null,
 };
 
 export function useWorkflow() {
@@ -30,20 +30,16 @@ export function useWorkflow() {
   }, []);
 
   const completeJD = useCallback((data: JDStepData) => {
-    setState((prev) => ({ ...prev, step: "analyze", jdData: data }));
+    setState((prev) => ({ ...prev, step: "optimize", jdData: data }));
   }, []);
 
-  const completeAnalysis = useCallback((result: AnalysisResult) => {
-    setState((prev) => ({ ...prev, step: "preview", analysisResult: result }));
-  }, []);
-
-  const goToDownload = useCallback(() => {
-    setState((prev) => ({ ...prev, step: "download" }));
+  const completeOptimize = useCallback((result: OptimizeResult) => {
+    setState((prev) => ({ ...prev, step: "download", optimizeResult: result }));
   }, []);
 
   const reset = useCallback(() => {
     setState(INITIAL);
   }, []);
 
-  return { ...state, completeUpload, completeJD, completeAnalysis, goToDownload, reset };
+  return { ...state, completeUpload, completeJD, completeOptimize, reset };
 }

@@ -15,6 +15,7 @@ from slowapi.util import get_remote_address
 warnings.filterwarnings("ignore", category=FutureWarning, module="google.api_core")
 
 from api.analyze_jd import router as analyze_jd_router
+from api.ats import router as ats_router
 from api.customize_resume import router as customize_resume_router
 from api.export import router as export_router
 from api.extract_resume import router as extract_resume_router
@@ -85,3 +86,4 @@ app.include_router(gap_analysis_router, prefix="/api")
 app.include_router(customize_resume_router, prefix="/api")
 app.include_router(resume_diff_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
+app.include_router(ats_router, prefix="/api")
