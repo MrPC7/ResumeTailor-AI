@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from schemas.analyze_jd import AnalyzeJDResponse
 from schemas.extract_resume import ExtractResumeResponse
 
-CURRENT_YEAR = datetime.now().year
+
+def _current_year() -> int:
+    return datetime.now(tz=timezone.utc).year
 
 SENIORITY_MIN_YEARS: dict[str, int] = {
     "intern": 0,
@@ -70,17 +72,27 @@ def _compute_list_match_score(candidate_terms: set[str], targets: list[str]) -> 
     for target in normalized_targets:
         target_tokens = _tokenize(target)
         has_full_phrase = target in candidate_terms
-        has_token_overlap = bool(target_tokens.intersection(candidate_terms))
 
-        if has_full_phrase or has_token_overlap:
+        if has_full_phrase:
             matches += 1
+            continue
+
+        # For multi-word skills, require >=75% token overlap to avoid
+        # false positives from single shared words (e.g. "machine" matching
+        # "machine learning").
+        if target_tokens:
+            overlap = target_tokens.intersection(candidate_terms)
+            ratio = len(overlap) / len(target_tokens)
+            threshold = 0.75 if len(target_tokens) > 1 else 0.0
+            if ratio > threshold:
+                matches += 1
 
     return (matches / len(normalized_targets)) * 100.0
 
 
 def _extract_years(duration: str) -> list[int]:
     values = [int(value) for value in re.findall(r"\b(19\d{2}|20\d{2})\b", duration)]
-    return [year for year in values if 1950 <= year <= CURRENT_YEAR + 1]
+    return [year for year in values if 1950 <= year <= _current_year() + 1]
 
 
 def _estimate_experience_years(resume: ExtractResumeResponse) -> float:

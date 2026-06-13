@@ -30,7 +30,11 @@ class UploadService:
         if not filename:
             raise UploadValidationError("File name is missing.")
 
+        # Strip directory components to prevent path traversal.
         name = Path(filename).name
+        if not name or name.startswith("."):
+            raise UploadValidationError("Invalid file name.")
+
         extension = Path(name).suffix.lower()
 
         if extension not in ALLOWED_EXTENSIONS:

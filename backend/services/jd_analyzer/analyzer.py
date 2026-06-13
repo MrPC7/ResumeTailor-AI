@@ -6,8 +6,8 @@ from schemas.analyze_jd import AnalyzedJD
 from services.prompt_builder import PromptType, prompt_builder
 from services.resume_extractor.gemini_client import (
     GeminiAPIError,
-    GeminiClient,
     GeminiParseError,
+    LLMClient,
 )
 
 
@@ -16,7 +16,7 @@ class JDAnalysisError(Exception):
 
 
 class JDAnalyzer:
-    def __init__(self, client: GeminiClient, max_retries: int) -> None:
+    def __init__(self, client: LLMClient, max_retries: int) -> None:
         self._client = client
         self._max_retries = max(1, max_retries)
 

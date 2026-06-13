@@ -8,8 +8,8 @@ from schemas.extract_resume import StructuredResume
 from services.prompt_builder import PromptType, prompt_builder
 from services.resume_extractor.gemini_client import (
     GeminiAPIError,
-    GeminiClient,
     GeminiParseError,
+    LLMClient,
 )
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class ResumeExtractionError(Exception):
 
 
 class ResumeExtractor:
-    def __init__(self, client: GeminiClient, max_retries: int) -> None:
+    def __init__(self, client: LLMClient, max_retries: int) -> None:
         self._client = client
         self._max_retries = max(1, max_retries)
 

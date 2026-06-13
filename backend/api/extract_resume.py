@@ -1,15 +1,20 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
+from core.config import settings
 from schemas.extract_resume import ExtractResumeRequest, ExtractResumeResponse
 from services.resume_extractor import resume_extractor
 from services.resume_extractor.extractor import ResumeExtractionError
 from services.resume_extractor.gemini_client import GeminiAPIError
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/extract-resume", response_model=ExtractResumeResponse)
-async def extract_resume(body: ExtractResumeRequest) -> ExtractResumeResponse:
+@limiter.limit(settings.RATE_LIMIT_LLM)
+async def extract_resume(request: Request, body: ExtractResumeRequest) -> ExtractResumeResponse:
     try:
         structured = await resume_extractor.extract(body.raw_text)
         return ExtractResumeResponse(**structured.model_dump())

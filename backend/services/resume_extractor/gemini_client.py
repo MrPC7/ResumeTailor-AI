@@ -130,14 +130,14 @@ class FallbackLLMClient:
     async def generate_json(self, prompt: str) -> dict[str, object]:
         try:
             return await self._primary.generate_json(prompt)
-        except LLMAPIError as primary_error:
+        except (LLMAPIError, LLMParseError) as primary_error:
             logger.warning(
                 "Primary LLM failed (%s); falling back to secondary provider.",
                 primary_error,
             )
             try:
                 return await self._secondary.generate_json(prompt)
-            except LLMAPIError as fallback_error:
+            except (LLMAPIError, LLMParseError) as fallback_error:
                 raise LLMAPIError(
                     f"Both primary and fallback LLM providers failed. "
                     f"Primary: {primary_error}. Fallback: {fallback_error}."

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 from schemas.extract_resume import ExtractResumeResponse
@@ -5,12 +7,12 @@ from schemas.extract_resume import ExtractResumeResponse
 
 class DiffToken(BaseModel):
     text: str
-    status: str  # "added" | "removed" | "unchanged"
+    status: Literal["added", "removed", "unchanged"]
 
 
 class DiffItem(BaseModel):
     value: str
-    status: str  # "added" | "removed" | "unchanged"
+    status: Literal["added", "removed", "unchanged"]
 
 
 class ExperienceDiff(BaseModel):

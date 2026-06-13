@@ -10,8 +10,8 @@ from schemas.gap_analysis import GapAnalysisResponse
 from services.prompt_builder import PromptType, prompt_builder
 from services.resume_extractor.gemini_client import (
     GeminiAPIError,
-    GeminiClient,
     GeminiParseError,
+    LLMClient,
 )
 
 
@@ -27,7 +27,7 @@ def _build_empty_gap_json() -> str:
 
 
 class ResumeCustomizer:
-    def __init__(self, client: GeminiClient, max_retries: int) -> None:
+    def __init__(self, client: LLMClient, max_retries: int) -> None:
         self._client = client
         self._max_retries = max(1, max_retries)
 

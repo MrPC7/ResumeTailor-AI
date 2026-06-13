@@ -49,26 +49,100 @@ class ResumeExporter:
 
     @staticmethod
     def _build_pdf(resume: ExtractResumeResponse) -> bytes:
-        lines = ResumeExporter._compose_plain_text_lines(resume)
+        MARGIN = 48.0
+        NAME_SIZE = 18.0
+        HEADING_SIZE = 14.0
+        BODY_SIZE = 11.0
+        NAME_LINE_HEIGHT = 24.0
+        HEADING_LINE_HEIGHT = 20.0
+        BODY_LINE_HEIGHT = 15.0
+        SECTION_GAP = 12.0
+        FONT_BODY = "helv"
+        FONT_BOLD = "hebo"
 
         document = fitz.open()
         try:
             page = document.new_page()
-            y = 48.0
-            left = 48.0
-            bottom_limit = page.rect.height - 48.0
-            line_height = 14.0
+            y = MARGIN
+            left = MARGIN
+            right_limit = page.rect.width - MARGIN
+            bottom_limit = page.rect.height - MARGIN
 
-            for line in lines:
-                if y + line_height > bottom_limit:
+            def _ensure_space(needed: float) -> None:
+                nonlocal page, y
+                if y + needed > bottom_limit:
                     page = document.new_page()
-                    y = 48.0
+                    y = MARGIN
 
-                text = line if line else " "
-                page.insert_text((left, y), text, fontsize=11)
-                y += line_height
+            def _write(text: str, fontsize: float, fontname: str, line_height: float) -> None:
+                nonlocal y
+                for raw_line in text.split("\n"):
+                    _ensure_space(line_height)
+                    page.insert_text((left, y), raw_line or " ", fontsize=fontsize, fontname=fontname)
+                    y += line_height
+
+            # Name
+            _write(resume.name or "Customized Resume", NAME_SIZE, FONT_BOLD, NAME_LINE_HEIGHT)
+
+            # Contact
+            contact_parts = [p for p in [resume.email, resume.phone] if p]
+            if contact_parts:
+                _write(" | ".join(contact_parts), BODY_SIZE, FONT_BODY, BODY_LINE_HEIGHT)
+
+            # Summary
+            if resume.summary:
+                y += SECTION_GAP
+                _write("Summary", HEADING_SIZE, FONT_BOLD, HEADING_LINE_HEIGHT)
+                _write(resume.summary, BODY_SIZE, FONT_BODY, BODY_LINE_HEIGHT)
+
+            # Skills
+            if resume.skills:
+                y += SECTION_GAP
+                _write("Skills", HEADING_SIZE, FONT_BOLD, HEADING_LINE_HEIGHT)
+                _write(", ".join(s.strip() for s in resume.skills if s.strip()), BODY_SIZE, FONT_BODY, BODY_LINE_HEIGHT)
+
+            # Experience
+            if resume.experience:
+                y += SECTION_GAP
+                _write("Experience", HEADING_SIZE, FONT_BOLD, HEADING_LINE_HEIGHT)
+                for item in resume.experience:
+                    header = " - ".join(p for p in [item.position, item.company] if p)
+                    if header:
+                        _ensure_space(BODY_LINE_HEIGHT)
+                        _write(header, BODY_SIZE, FONT_BOLD, BODY_LINE_HEIGHT)
+                    if item.duration:
+                        _write(item.duration, BODY_SIZE, FONT_BODY, BODY_LINE_HEIGHT)
+                    if item.description:
+                        _write(item.description, BODY_SIZE, FONT_BODY, BODY_LINE_HEIGHT)
+                    y += 4.0  # spacing between entries
+
+            # Education
+            if resume.education:
+                y += SECTION_GAP
+                _write("Education", HEADING_SIZE, FONT_BOLD, HEADING_LINE_HEIGHT)
+                for item in resume.education:
+                    edu_line = ", ".join(p for p in [item.degree, item.institution, item.year] if p)
+                    if edu_line:
+                        _write(edu_line, BODY_SIZE, FONT_BODY, BODY_LINE_HEIGHT)
+
+            # Projects
+            if resume.projects:
+                y += SECTION_GAP
+                _write("Projects", HEADING_SIZE, FONT_BOLD, HEADING_LINE_HEIGHT)
+                for item in resume.projects:
+                    if item.name:
+                        _write(item.name, BODY_SIZE, FONT_BOLD, BODY_LINE_HEIGHT)
+                    if item.description:
+                        _write(item.description, BODY_SIZE, FONT_BODY, BODY_LINE_HEIGHT)
+                    if item.technologies:
+                        tech_line = ", ".join(t.strip() for t in item.technologies if t.strip())
+                        if tech_line:
+                            _write(f"Technologies: {tech_line}", BODY_SIZE, FONT_BODY, BODY_LINE_HEIGHT)
+                    y += 4.0
 
             return document.tobytes(garbage=4, deflate=True)
+        except ResumeExportError:
+            raise
         except Exception as exc:
             raise ResumeExportError("Unable to generate PDF file.") from exc
         finally:
