@@ -7,6 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  downloadBlob,
+  exportResume,
+  type ExportFormat,
+} from "@/features/workflow/services/export-resume.service";
 import type { AnalysisResult } from "@/features/workflow/types/workflow.types";
 import { cn } from "@/lib/utils";
 
@@ -24,17 +29,26 @@ function scoreColor(score: number): string {
 export function StepDownload({ analysisResult, onReset }: Props) {
   const { matchScore, gapAnalysis, customizedResume } = analysisResult;
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState<ExportFormat | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const jsonString = JSON.stringify(customizedResume, null, 2);
 
-  const handleDownload = () => {
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${(customizedResume.name ?? "resume").replace(/\s+/g, "_")}_customized.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleDownload = async (format: ExportFormat) => {
+    try {
+      setDownloadError(null);
+      setIsDownloading(format);
+      const result = await exportResume({
+        resume: customizedResume,
+        format,
+        fileName: customizedResume.name ?? undefined,
+      });
+      downloadBlob(result.blob, result.fileName);
+    } catch (error) {
+      setDownloadError(error instanceof Error ? error.message : "Failed to export resume.");
+    } finally {
+      setIsDownloading(null);
+    }
   };
 
   const handleCopy = async () => {
@@ -122,14 +136,25 @@ export function StepDownload({ analysisResult, onReset }: Props) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Download Customized Resume</CardTitle>
-          <CardDescription>
-            Download the structured JSON for use with resume builders or ATS systems
-          </CardDescription>
+          <CardDescription>Download your tailored resume in professional formats</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button className="w-full" onClick={handleDownload}>
+          <Button
+            className="w-full"
+            onClick={() => void handleDownload("pdf")}
+            disabled={isDownloading !== null}
+          >
             <Download className="mr-2 h-4 w-4" />
-            Download JSON
+            {isDownloading === "pdf" ? "Generating PDF..." : "Download PDF"}
+          </Button>
+          <Button
+            className="w-full"
+            variant="secondary"
+            onClick={() => void handleDownload("docx")}
+            disabled={isDownloading !== null}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {isDownloading === "docx" ? "Generating DOCX..." : "Download DOCX"}
           </Button>
           <Button className="w-full" variant="outline" onClick={handleCopy}>
             {copied ? (
@@ -144,6 +169,7 @@ export function StepDownload({ analysisResult, onReset }: Props) {
               </>
             )}
           </Button>
+          {downloadError && <p className="text-sm text-red-600">{downloadError}</p>}
         </CardContent>
       </Card>
 
