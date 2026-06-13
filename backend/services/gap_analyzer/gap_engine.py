@@ -2,7 +2,26 @@ from __future__ import annotations
 
 from schemas.analyze_jd import AnalyzeJDResponse
 from schemas.extract_resume import ExtractResumeResponse
-from services.match_engine.scoring import _collect_resume_terms, _normalize
+from services.ats.keyword_matcher import normalize, build_resume_term_set
+
+
+def _collect_resume_terms(resume: ExtractResumeResponse) -> set[str]:
+    """Collect a flat set of normalized tokens from all resume text."""
+    text_blocks: list[str] = []
+    if resume.summary:
+        text_blocks.append(resume.summary)
+    for exp in resume.experience:
+        if exp.position:
+            text_blocks.append(exp.position)
+        if exp.description:
+            text_blocks.append(exp.description)
+    for proj in resume.projects:
+        if proj.description:
+            text_blocks.append(proj.description)
+        text_blocks.extend(proj.technologies)
+
+    _, token_pool = build_resume_term_set(resume.skills, text_blocks)
+    return token_pool
 
 
 def _classify_skills(
@@ -22,7 +41,7 @@ def _classify_skills(
         if not skill.strip():
             continue
 
-        normalized = _normalize(skill)
+        normalized = normalize(skill)
         tokens = set(normalized.split())
 
         # A skill is matched if the full normalized phrase is present,
@@ -44,11 +63,11 @@ def _build_recommendations(
 ) -> list[str]:
     recommendations: list[str] = []
 
-    required_set = {_normalize(s) for s in required_skills if s.strip()}
-    preferred_set = {_normalize(s) for s in preferred_skills if s.strip()}
+    required_set = {normalize(s) for s in required_skills if s.strip()}
+    preferred_set = {normalize(s) for s in preferred_skills if s.strip()}
 
-    missing_required = [s for s in missing_skills if _normalize(s) in required_set]
-    missing_preferred = [s for s in missing_skills if _normalize(s) in preferred_set]
+    missing_required = [s for s in missing_skills if normalize(s) in required_set]
+    missing_preferred = [s for s in missing_skills if normalize(s) in preferred_set]
 
     for skill in missing_required:
         recommendations.append(

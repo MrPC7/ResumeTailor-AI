@@ -206,57 +206,5 @@ class ResumeExporter:
         except Exception as exc:
             raise ResumeExportError("Unable to generate DOCX file.") from exc
 
-    @staticmethod
-    def _compose_plain_text_lines(resume: ExtractResumeResponse) -> list[str]:
-        lines: list[str] = []
-
-        lines.append(resume.name or "Customized Resume")
-
-        contact_parts = [part for part in [resume.email, resume.phone] if part]
-        if contact_parts:
-            lines.append(" | ".join(contact_parts))
-
-        if resume.summary:
-            lines.extend(["", "Summary", resume.summary])
-
-        if resume.skills:
-            lines.extend(["", "Skills", ", ".join(skill for skill in resume.skills if skill)])
-
-        if resume.experience:
-            lines.append("")
-            lines.append("Experience")
-            for item in resume.experience:
-                header = " - ".join(part for part in [item.position, item.company] if part)
-                if header:
-                    lines.append(header)
-                if item.duration:
-                    lines.append(item.duration)
-                if item.description:
-                    lines.append(item.description)
-                lines.append("")
-
-        if resume.education:
-            lines.append("Education")
-            for item in resume.education:
-                edu_line = ", ".join(part for part in [item.degree, item.institution, item.year] if part)
-                if edu_line:
-                    lines.append(edu_line)
-
-        if resume.projects:
-            lines.append("")
-            lines.append("Projects")
-            for item in resume.projects:
-                if item.name:
-                    lines.append(item.name)
-                if item.description:
-                    lines.append(item.description)
-                if item.technologies:
-                    tech_line = ", ".join(tech for tech in item.technologies if tech)
-                    if tech_line:
-                        lines.append(f"Technologies: {tech_line}")
-                lines.append("")
-
-        return lines
-
 
 resume_exporter = ResumeExporter()
