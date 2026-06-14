@@ -1,8 +1,8 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ATSComparisonResult } from "@/features/workflow/types/workflow.types";
+import type { ATSComparisonResult, ATSScores } from "@/features/workflow/types/workflow.types";
 
 type Props = {
   comparison: ATSComparisonResult;
@@ -24,13 +24,70 @@ function ScorePill({ score, label }: { score: number; label: string }) {
   );
 }
 
+type DimensionRowProps = {
+  label: string;
+  before: number;
+  after: number;
+};
+
+function DimensionRow({ label, before, after }: DimensionRowProps) {
+  const delta = after - before;
+  const barColor = (v: number) =>
+    v >= 80 ? "bg-emerald-500" : v >= 60 ? "bg-amber-500" : "bg-red-500";
+  const deltaColor =
+    delta > 0
+      ? "text-emerald-600"
+      : delta < 0
+        ? "text-red-600"
+        : "text-slate-400";
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium text-slate-700">{label}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs tabular-nums text-slate-500">{before}</span>
+          <ArrowRight className="h-3 w-3 text-slate-300" />
+          <span className="text-xs tabular-nums font-semibold text-slate-700">{after}</span>
+          <span className={cn("text-xs font-bold tabular-nums min-w-[36px] text-right", deltaColor)}>
+            {delta > 0 ? "+" : ""}{delta}
+          </span>
+        </div>
+      </div>
+      <div className="flex gap-1 h-2">
+        <div className="flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={cn("h-full rounded-full transition-all duration-500", barColor(before))}
+            style={{ width: `${before}%`, opacity: 0.4 }}
+          />
+        </div>
+        <div className="flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={cn("h-full rounded-full transition-all duration-700", barColor(after))}
+            style={{ width: `${after}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ATSComparisonCard({ comparison }: Props) {
-  const { beforeScore, afterScore, improvement } = comparison;
+  const { beforeScore, afterScore, improvement, before, after } = comparison;
   const isPositive = improvement > 0;
   const isNeutral = improvement === 0;
 
+  const dimensions: { label: string; key: keyof ATSScores }[] = [
+    { label: "Skills Match", key: "skills" },
+    { label: "Keyword Coverage", key: "keywords" },
+    { label: "Experience Fit", key: "experience" },
+    { label: "Education", key: "education" },
+    { label: "Overall Fit", key: "overallFit" },
+  ];
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-700">Before vs After Optimization</h3>
         <span
@@ -53,6 +110,7 @@ export function ATSComparisonCard({ comparison }: Props) {
         </span>
       </div>
 
+      {/* Overall score pills */}
       <div className="flex items-center justify-center gap-4">
         <ScorePill score={beforeScore} label="Before" />
 
@@ -79,6 +137,33 @@ export function ATSComparisonCard({ comparison }: Props) {
           Score decreased by {Math.abs(improvement)} point{Math.abs(improvement) !== 1 ? "s" : ""}.
         </p>
       )}
+
+      {/* Per-dimension breakdown */}
+      <div className="space-y-1 pt-1">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Dimension Breakdown
+          </h4>
+          <div className="flex items-center gap-3 text-[10px] text-slate-400">
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-4 rounded-full bg-slate-300 opacity-40" />
+              Before
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-4 rounded-full bg-emerald-500" />
+              After
+            </span>
+          </div>
+        </div>
+        {dimensions.map((dim) => (
+          <DimensionRow
+            key={dim.key}
+            label={dim.label}
+            before={before.scores[dim.key]}
+            after={after.scores[dim.key]}
+          />
+        ))}
+      </div>
     </div>
   );
 }
