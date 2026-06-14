@@ -4,16 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
   AlertCircle,
-  Check,
-  ChevronDown,
-  ChevronRight,
   Loader2,
   ShieldCheck,
   Sparkles,
   ThumbsDown,
   ThumbsUp,
   TrendingUp,
-  Zap,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,18 +19,17 @@ import { ATSScoreCard } from "@/components/ats/ATSScoreCard";
 import { ATSBreakdown } from "@/components/ats/ATSBreakdown";
 import { ATSComparisonCard } from "@/components/ats/ATSComparisonCard";
 import { MissingKeywords } from "@/components/ats/MissingKeywords";
+import { RecommendationPanel } from "@/components/recommendations/RecommendationPanel";
 import { analyzeATS, compareATS, predictPotentialScore, fetchRecommendations } from "@/features/workflow/services/ats.service";
 import { customizeResume } from "@/features/workflow/services/customize-resume.service";
 import type {
   AnalyzedJD,
   ATSEvaluationResult,
-  ImpactLevel,
   OptimizeResult,
   PotentialScoreResult,
   RecommendationReport,
   StructuredResume,
 } from "@/features/workflow/types/workflow.types";
-import { cn } from "@/lib/utils";
 
 type Phase = "loading" | "review" | "applying" | "done" | "error";
 
@@ -52,7 +47,6 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
   const [recReport, setRecReport] = useState<RecommendationReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedActions, setSelectedActions] = useState<Record<string, boolean>>({});
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [optimizeResult, setOptimizeResult] = useState<OptimizeResult | null>(null);
   const startedRef = useRef(false);
 
@@ -140,29 +134,7 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
     applyMutation.mutate();
   };
 
-  const toggleAction = (id: string) => {
-    setSelectedActions((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const toggleGroup = (groupId: string) => {
-    setCollapsedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
-  };
-
   const acceptedCount = Object.values(selectedActions).filter(Boolean).length;
-
-  const impactBadge = (level: ImpactLevel) => {
-    const styles: Record<ImpactLevel, string> = {
-      critical: "bg-red-100 text-red-700",
-      high: "bg-orange-100 text-orange-700",
-      medium: "bg-yellow-100 text-yellow-700",
-      low: "bg-slate-100 text-slate-600",
-    };
-    return (
-      <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase", styles[level])}>
-        {level}
-      </span>
-    );
-  };
 
   // ── Loading state ────────────────────────────────────────────────────
   if (phase === "loading") {
@@ -354,159 +326,20 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
 
       <Separator />
 
-      {/* AI Recommendations — grouped by category */}
+      {/* AI Recommendations — grouped panel with live score updates */}
       {recReport && recReport.groups.length > 0 ? (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Zap className="h-4 w-4 text-amber-500" />
-                  Recommendations
-                </CardTitle>
-                <CardDescription>
-                  Estimated total ATS gain: +{recReport.totalEstimatedGain} points. Accept or reject each item.
-                </CardDescription>
-              </div>
-              <span className="text-xs font-medium text-slate-500">
-                {acceptedCount} selected
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recReport.groups.map((group) => {
-              const isCollapsed = collapsedGroups[group.groupId] ?? false;
-              const groupSelectedCount = group.recommendations.filter(
-                (r) => selectedActions[r.id],
-              ).length;
-              const groupPoints = group.recommendations.reduce(
-                (sum, r) => sum + r.estimatedPoints,
-                0,
-              );
-
-              return (
-                <div key={group.groupId} className="rounded-lg border border-slate-200">
-                  {/* Group header — click to collapse */}
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-slate-50 transition-colors"
-                    onClick={() => toggleGroup(group.groupId)}
-                  >
-                    <div className="flex items-center gap-2">
-                      {isCollapsed ? (
-                        <ChevronRight className="h-4 w-4 text-slate-400" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
-                      )}
-                      <span className="text-sm font-semibold text-slate-800">
-                        {group.groupTitle}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        ({groupSelectedCount}/{group.recommendations.length})
-                      </span>
-                    </div>
-                    <span className="text-xs font-medium text-blue-600">
-                      +{groupPoints} pts
-                    </span>
-                  </button>
-
-                  {/* Recommendation items */}
-                  {!isCollapsed && (
-                    <div className="space-y-1 px-3 pb-3">
-                      {group.recommendations.map((rec) => {
-                        const isChecked = selectedActions[rec.id] ?? false;
-                        return (
-                          <div
-                            key={rec.id}
-                            className={cn(
-                              "flex items-start gap-2.5 rounded-md border px-3 py-2 cursor-pointer transition-colors",
-                              isChecked
-                                ? "border-emerald-200 bg-emerald-50"
-                                : "border-slate-200 bg-slate-50 opacity-60",
-                            )}
-                            onClick={() => toggleAction(rec.id)}
-                          >
-                            <button
-                              type="button"
-                              className={cn(
-                                "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors",
-                                isChecked
-                                  ? "border-emerald-600 bg-emerald-600 text-white"
-                                  : "border-slate-300 bg-white",
-                              )}
-                              aria-label={isChecked ? `Reject: ${rec.title}` : `Accept: ${rec.title}`}
-                            >
-                              {isChecked && <Check className="h-2.5 w-2.5" />}
-                            </button>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-medium text-slate-800">
-                                  {rec.title}
-                                </span>
-                                {impactBadge(rec.impactLevel)}
-                                <span className="text-[10px] text-blue-600 font-medium">
-                                  +{rec.estimatedPoints} pts
-                                </span>
-                              </div>
-                              <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">
-                                {rec.description}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+        <RecommendationPanel
+          report={recReport}
+          currentScore={atsResult!.overallScore}
+          potentialScore={potentialScore?.potentialScore ?? atsResult!.overallScore}
+          selectedIds={selectedActions}
+          onSelectionChange={setSelectedActions}
+        />
       ) : !recReport ? (
-        /* Fallback: show flat recommendedActions while recs are loading / if they failed */
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Recommended Actions</CardTitle>
-            <CardDescription>
-              AI-generated suggestions to improve your ATS score.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {atsResult!.recommendedActions.map((action, i) => {
-              const isChecked = selectedActions[String(i)] ?? false;
-              return (
-                <div
-                  key={i}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-md border px-3 py-2 cursor-pointer transition-colors",
-                    isChecked
-                      ? "border-emerald-200 bg-emerald-50"
-                      : "border-slate-200 bg-slate-50 opacity-60",
-                  )}
-                  onClick={() => toggleAction(String(i))}
-                >
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors",
-                      isChecked
-                        ? "border-emerald-600 bg-emerald-600 text-white"
-                        : "border-slate-300 bg-white",
-                    )}
-                    aria-label={isChecked ? `Reject: ${action}` : `Accept: ${action}`}
-                  >
-                    {isChecked && <Check className="h-2.5 w-2.5" />}
-                  </button>
-                  <span className="text-sm text-slate-700">{action}</span>
-                </div>
-              );
-            })}
-
-            {atsResult!.recommendedActions.length === 0 && (
-              <p className="text-sm text-slate-400 italic">
-                No recommendations — your resume is already well-optimized!
-              </p>
-            )}
+          <CardContent className="flex flex-col items-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+            <p className="mt-2 text-sm text-slate-500">Loading recommendations...</p>
           </CardContent>
         </Card>
       ) : null}
