@@ -53,10 +53,11 @@ function ScoreBar({ label, value, weight }: BarItem) {
 
 export function ATSBreakdown({ scores }: Props) {
   const items: BarItem[] = [
-    { label: "Skills Match", value: scores.skills, weight: "40%" },
-    { label: "Keyword Coverage", value: scores.keywords, weight: "30%" },
-    { label: "Experience Fit", value: scores.experience, weight: "20%" },
+    { label: "Skills Match", value: scores.skills, weight: "30%" },
+    { label: "Keyword Coverage", value: scores.keywords, weight: "25%" },
+    { label: "Experience Fit", value: scores.experience, weight: "25%" },
     { label: "Education", value: scores.education, weight: "10%" },
+    { label: "Overall Fit", value: scores.overallFit, weight: "10%" },
   ];
 
   return (

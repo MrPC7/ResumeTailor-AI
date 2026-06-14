@@ -2,7 +2,7 @@ import { z } from "zod";
 import { jsonPost } from "@/features/workflow/services/api";
 import type {
   AnalyzedJD,
-  ATSAnalysisResult,
+  ATSEvaluationResult,
   ATSComparisonResult,
   StructuredResume,
 } from "@/features/workflow/types/workflow.types";
@@ -14,27 +14,25 @@ const ATSScoresSchema = z.object({
   keywords: z.number().int().min(0).max(100),
   experience: z.number().int().min(0).max(100),
   education: z.number().int().min(0).max(100),
+  overallFit: z.number().int().min(0).max(100),
 });
 
-const RecommendationGroupSchema = z.object({
-  title: z.string(),
-  items: z.array(z.string()),
-});
-
-const ATSAnalysisResultSchema = z.object({
+const ATSEvaluationResultSchema = z.object({
   overallScore: z.number().int().min(0).max(100),
+  confidence: z.number().int().min(0).max(100),
   scores: ATSScoresSchema,
-  matchedKeywords: z.array(z.string()),
+  strengths: z.array(z.string()),
+  weaknesses: z.array(z.string()),
   missingKeywords: z.array(z.string()),
-  recommendations: z.array(RecommendationGroupSchema),
+  recommendedActions: z.array(z.string()),
 });
 
 const ATSComparisonResultSchema = z.object({
   beforeScore: z.number().int().min(0).max(100),
   afterScore: z.number().int().min(0).max(100),
   improvement: z.number().int(),
-  before: ATSAnalysisResultSchema,
-  after: ATSAnalysisResultSchema,
+  before: ATSEvaluationResultSchema,
+  after: ATSEvaluationResultSchema,
 });
 
 // ── Service functions ─────────────────────────────────────────────────────
@@ -42,9 +40,9 @@ const ATSComparisonResultSchema = z.object({
 export async function analyzeATS(
   resume: StructuredResume,
   jobDescription: AnalyzedJD,
-): Promise<ATSAnalysisResult> {
+): Promise<ATSEvaluationResult> {
   const raw = await jsonPost<unknown>("/api/ats/analyze", { resume, jobDescription });
-  return ATSAnalysisResultSchema.parse(raw);
+  return ATSEvaluationResultSchema.parse(raw);
 }
 
 export async function compareATS(

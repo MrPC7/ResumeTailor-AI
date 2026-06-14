@@ -60,27 +60,25 @@ export type ATSScores = {
   keywords: number;
   experience: number;
   education: number;
+  overallFit: number;
 };
 
-export type RecommendationGroup = {
-  title: string;
-  items: string[];
-};
-
-export type ATSAnalysisResult = {
+export type ATSEvaluationResult = {
   overallScore: number;
+  confidence: number;
   scores: ATSScores;
-  matchedKeywords: string[];
+  strengths: string[];
+  weaknesses: string[];
   missingKeywords: string[];
-  recommendations: RecommendationGroup[];
+  recommendedActions: string[];
 };
 
 export type ATSComparisonResult = {
   beforeScore: number;
   afterScore: number;
   improvement: number;
-  before: ATSAnalysisResult;
-  after: ATSAnalysisResult;
+  before: ATSEvaluationResult;
+  after: ATSEvaluationResult;
 };
 
 export type OptimizeResult = {

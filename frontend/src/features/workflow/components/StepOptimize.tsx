@@ -6,7 +6,10 @@ import {
   AlertCircle,
   Check,
   Loader2,
+  ShieldCheck,
   Sparkles,
+  ThumbsDown,
+  ThumbsUp,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,20 +19,15 @@ import { ATSScoreCard } from "@/components/ats/ATSScoreCard";
 import { ATSBreakdown } from "@/components/ats/ATSBreakdown";
 import { ATSComparisonCard } from "@/components/ats/ATSComparisonCard";
 import { MissingKeywords } from "@/components/ats/MissingKeywords";
-import { KeywordHeatmap } from "@/components/ats/KeywordHeatmap";
 import { analyzeATS, compareATS } from "@/features/workflow/services/ats.service";
 import { customizeResume } from "@/features/workflow/services/customize-resume.service";
 import type {
   AnalyzedJD,
-  ATSAnalysisResult,
+  ATSEvaluationResult,
   OptimizeResult,
-  RecommendationGroup,
   StructuredResume,
 } from "@/features/workflow/types/workflow.types";
 import { cn } from "@/lib/utils";
-
-// Key for tracking individual item selections: "groupIndex-itemIndex"
-type ItemKey = `${number}-${number}`;
 
 type Phase = "loading" | "review" | "applying" | "done" | "error";
 
@@ -42,9 +40,9 @@ type Props = {
 
 export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props) {
   const [phase, setPhase] = useState<Phase>("loading");
-  const [atsResult, setAtsResult] = useState<ATSAnalysisResult | null>(null);
+  const [atsResult, setAtsResult] = useState<ATSEvaluationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedItems, setSelectedItems] = useState<Record<ItemKey, boolean>>({});
+  const [selectedActions, setSelectedActions] = useState<Record<number, boolean>>({});
   const [optimizeResult, setOptimizeResult] = useState<OptimizeResult | null>(null);
   const startedRef = useRef(false);
 
@@ -57,14 +55,12 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
       try {
         const result = await analyzeATS(resume, analyzedJD);
         setAtsResult(result);
-        // Default: all items accepted
-        const defaults: Record<ItemKey, boolean> = {};
-        result.recommendations.forEach((group, gi) => {
-          group.items.forEach((_, ii) => {
-            defaults[`${gi}-${ii}`] = true;
-          });
+        // Default: all actions accepted
+        const defaults: Record<number, boolean> = {};
+        result.recommendedActions.forEach((_, i) => {
+          defaults[i] = true;
         });
-        setSelectedItems(defaults);
+        setSelectedActions(defaults);
         setPhase("review");
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to analyze resume.");
@@ -78,19 +74,12 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
   // ── Apply accepted recommendations ───────────────────────────────────
   const applyMutation = useMutation({
     mutationFn: async (): Promise<OptimizeResult> => {
-      // Build accepted recommendations as flat strings for the customizer
-      const acceptedRecs: string[] = [];
-      atsResult!.recommendations.forEach((group, gi) => {
-        const acceptedInGroup = group.items.filter(
-          (_, ii) => selectedItems[`${gi}-${ii}`]
-        );
-        if (acceptedInGroup.length > 0) {
-          acceptedRecs.push(`${group.title}: ${acceptedInGroup.join(", ")}`);
-        }
-      });
+      const acceptedRecs = atsResult!.recommendedActions.filter(
+        (_, i) => selectedActions[i],
+      );
 
       const gapAnalysis = {
-        matchedSkills: atsResult!.matchedKeywords,
+        matchedSkills: [] as string[],
         missingSkills: atsResult!.missingKeywords,
         recommendations: acceptedRecs,
       };
@@ -116,25 +105,11 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
     applyMutation.mutate();
   };
 
-  const toggleItem = (groupIndex: number, itemIndex: number) => {
-    const key: ItemKey = `${groupIndex}-${itemIndex}`;
-    setSelectedItems((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggleAction = (index: number) => {
+    setSelectedActions((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
-  const toggleGroup = (groupIndex: number, group: RecommendationGroup) => {
-    const allSelected = group.items.every(
-      (_, ii) => selectedItems[`${groupIndex}-${ii}`]
-    );
-    setSelectedItems((prev) => {
-      const next = { ...prev };
-      group.items.forEach((_, ii) => {
-        next[`${groupIndex}-${ii}`] = !allSelected;
-      });
-      return next;
-    });
-  };
-
-  const acceptedCount = Object.values(selectedItems).filter(Boolean).length;
+  const acceptedCount = Object.values(selectedActions).filter(Boolean).length;
 
   // ── Loading state ────────────────────────────────────────────────────
   if (phase === "loading") {
@@ -142,12 +117,12 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
       <Card>
         <CardHeader>
           <CardTitle>Analyzing Your Resume</CardTitle>
-          <CardDescription>Computing ATS score against the job description...</CardDescription>
+          <CardDescription>AI is evaluating your resume against the job description...</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center py-8">
             <Loader2 className="h-10 w-10 animate-spin text-slate-400" />
-            <p className="mt-3 text-sm text-slate-500">Running ATS analysis...</p>
+            <p className="mt-3 text-sm text-slate-500">Running AI-powered ATS evaluation...</p>
           </div>
         </CardContent>
       </Card>
@@ -205,16 +180,26 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
   // ── Review state ─────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
-      {/* Original ATS Score */}
+      {/* Original ATS Score + Confidence */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Your Current ATS Score</CardTitle>
-          <CardDescription>
-            How your original resume scores against this job description.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Your Current ATS Score</CardTitle>
+              <CardDescription>
+                AI-powered evaluation against this job description.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-slate-500" />
+              <span className="text-xs font-medium text-slate-600">
+                {atsResult!.confidence}% confidence
+              </span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col items-center py-4">
-          <ATSScoreCard score={atsResult!.overallScore} size={140} label="Original Resume Score" />
+          <ATSScoreCard score={atsResult!.overallScore} size={140} label="Overall ATS Score" />
         </CardContent>
       </Card>
 
@@ -228,7 +213,52 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
         </CardContent>
       </Card>
 
-      {/* Keywords */}
+      {/* Strengths & Weaknesses */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {atsResult!.strengths.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ThumbsUp className="h-4 w-4 text-emerald-600" />
+                Strengths ({atsResult!.strengths.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-1.5">
+                {atsResult!.strengths.map((s, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {atsResult!.weaknesses.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ThumbsDown className="h-4 w-4 text-amber-600" />
+                Weaknesses ({atsResult!.weaknesses.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-1.5">
+                {atsResult!.weaknesses.map((w, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                    {w}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Missing Keywords */}
       {atsResult!.missingKeywords.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
@@ -243,97 +273,48 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
         </Card>
       )}
 
-      {atsResult!.matchedKeywords.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">
-              Matched Keywords ({atsResult!.matchedKeywords.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <KeywordHeatmap keywords={atsResult!.matchedKeywords} />
-          </CardContent>
-        </Card>
-      )}
-
       <Separator />
 
-      {/* Recommendations — per-item checkboxes */}
+      {/* Recommended Actions — per-item checkboxes */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Recommendations</CardTitle>
+          <CardTitle className="text-base">Recommended Actions</CardTitle>
           <CardDescription>
-            Review each suggestion. Accept or reject individual items.
+            AI-generated suggestions to improve your ATS score. Accept or reject each action.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
-          {atsResult!.recommendations.map((group, gi) => {
-            const groupSelected = group.items.filter(
-              (_, ii) => selectedItems[`${gi}-${ii}`]
-            ).length;
-            const allSelected = groupSelected === group.items.length;
-
+        <CardContent className="space-y-2">
+          {atsResult!.recommendedActions.map((action, i) => {
+            const isChecked = selectedActions[i] ?? false;
             return (
-              <div key={gi} className="space-y-2">
-                {/* Group title with select-all toggle */}
-                <div
-                  className="flex items-center gap-2 cursor-pointer"
-                  onClick={() => toggleGroup(gi, group)}
+              <div
+                key={i}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-md border px-3 py-2 cursor-pointer transition-colors",
+                  isChecked
+                    ? "border-emerald-200 bg-emerald-50"
+                    : "border-slate-200 bg-slate-50 opacity-60",
+                )}
+                onClick={() => toggleAction(i)}
+              >
+                <button
+                  type="button"
+                  className={cn(
+                    "flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors",
+                    isChecked
+                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      : "border-slate-300 bg-white",
+                  )}
+                  aria-label={isChecked ? `Reject: ${action}` : `Accept: ${action}`}
                 >
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors",
-                      allSelected
-                        ? "border-emerald-600 bg-emerald-600 text-white"
-                        : groupSelected > 0
-                          ? "border-emerald-400 bg-emerald-100"
-                          : "border-slate-300 bg-white"
-                    )}
-                    aria-label={allSelected ? "Deselect all" : "Select all"}
-                  >
-                    {allSelected && <Check className="h-2.5 w-2.5" />}
-                  </button>
-                  <span className="text-sm font-semibold text-slate-800">{group.title}:</span>
-                </div>
-
-                {/* Individual items */}
-                <div className="ml-6 space-y-1.5">
-                  {group.items.map((item, ii) => {
-                    const isChecked = selectedItems[`${gi}-${ii}`] ?? false;
-                    return (
-                      <div
-                        key={ii}
-                        className={cn(
-                          "flex items-center gap-2.5 rounded-md border px-3 py-2 cursor-pointer transition-colors",
-                          isChecked
-                            ? "border-emerald-200 bg-emerald-50"
-                            : "border-slate-200 bg-slate-50 opacity-60"
-                        )}
-                        onClick={() => toggleItem(gi, ii)}
-                      >
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors",
-                            isChecked
-                              ? "border-emerald-600 bg-emerald-600 text-white"
-                              : "border-slate-300 bg-white"
-                          )}
-                          aria-label={isChecked ? `Reject: ${item}` : `Accept: ${item}`}
-                        >
-                          {isChecked && <Check className="h-2.5 w-2.5" />}
-                        </button>
-                        <span className="text-sm text-slate-700">{item}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                  {isChecked && <Check className="h-2.5 w-2.5" />}
+                </button>
+                <span className="text-sm text-slate-700">{action}</span>
               </div>
             );
           })}
 
-          {atsResult!.recommendations.length === 0 && (
+          {atsResult!.recommendedActions.length === 0 && (
             <p className="text-sm text-slate-400 italic">
               No recommendations — your resume is already well-optimized!
             </p>
@@ -359,7 +340,7 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
           ) : (
             <>
               <Sparkles className="h-4 w-4" />
-              Apply {acceptedCount} Change{acceptedCount !== 1 ? "s" : ""}
+              Apply {acceptedCount} Action{acceptedCount !== 1 ? "s" : ""}
             </>
           )}
         </Button>

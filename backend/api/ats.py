@@ -3,18 +3,18 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 
 from schemas.ats import ATSAnalyzeRequest, ATSCompareRequest
-from services.ats import ats_engine
-from services.ats.ats_engine import ATSEngineError
-from services.ats.models import ATSAnalysisResult, ATSComparisonResult
+from services.ats import ats_evaluator
+from services.ats.ats_evaluator import ATSEvaluationError
+from services.ats.ats_models import ATSComparisonResult, ATSEvaluationResult
 
 router = APIRouter(prefix="/ats", tags=["ats"])
 
 
-@router.post("/analyze", response_model=ATSAnalysisResult)
-async def analyze_ats(body: ATSAnalyzeRequest) -> ATSAnalysisResult:
+@router.post("/analyze", response_model=ATSEvaluationResult)
+async def analyze_ats(body: ATSAnalyzeRequest) -> ATSEvaluationResult:
     try:
-        return ats_engine.analyze(body.resume, body.jobDescription)
-    except ATSEngineError as exc:
+        return await ats_evaluator.evaluate(body.resume, body.jobDescription)
+    except ATSEvaluationError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
@@ -29,10 +29,10 @@ async def analyze_ats(body: ATSAnalyzeRequest) -> ATSAnalysisResult:
 @router.post("/compare", response_model=ATSComparisonResult)
 async def compare_ats(body: ATSCompareRequest) -> ATSComparisonResult:
     try:
-        return ats_engine.compare(
+        return await ats_evaluator.compare(
             body.originalResume, body.customizedResume, body.jobDescription
         )
-    except ATSEngineError as exc:
+    except ATSEvaluationError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
