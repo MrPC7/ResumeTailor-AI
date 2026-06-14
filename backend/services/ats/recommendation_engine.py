@@ -545,9 +545,89 @@ def _group_formatting(
 
 _IMPACT_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 
+# Raw weight multipliers by impact level — used during normalisation
+_IMPACT_WEIGHT = {"critical": 4, "high": 3, "medium": 2, "low": 1}
+
 
 def _sort_key(rec: Recommendation) -> tuple[int, int]:
     return (_IMPACT_ORDER.get(rec.impactLevel, 3), -rec.estimatedPoints)
+
+
+# ---------------------------------------------------------------------------
+# Point normalisation
+# ---------------------------------------------------------------------------
+
+def _largest_remainder_alloc(weights: list[float], budget: int) -> list[int]:
+    """Allocate ``budget`` integer units proportionally to ``weights``.
+
+    Uses the largest-remainder (Hamilton) method to ensure the total is exact.
+    """
+    total_w = sum(weights) or 1.0
+    exact = [(w / total_w) * budget for w in weights]
+    floored = [int(e) for e in exact]
+    remainders = [e - f for e, f in zip(exact, floored)]
+
+    leftover = budget - sum(floored)
+    if leftover > 0:
+        # Break ties by original weight (higher weight wins)
+        indices = sorted(
+            range(len(weights)),
+            key=lambda i: (remainders[i], weights[i]),
+            reverse=True,
+        )
+        for i in indices:
+            if leftover <= 0:
+                break
+            floored[i] += 1
+            leftover -= 1
+
+    return floored
+
+
+def _normalise_points(groups: list[RecommendationGroup], budget: int) -> None:
+    """Re-distribute estimatedPoints so they sum to *exactly* ``budget``.
+
+    Two-level allocation:
+      1. Budget is split across **groups** proportional to their total weight.
+      2. Each group's allocation is split across its **items** proportionally.
+
+    This prevents one large group from hoarding all points and produces a
+    visually balanced, realistic distribution.
+    """
+    all_recs = [r for g in groups for r in g.recommendations]
+    if not all_recs or budget <= 0:
+        for r in all_recs:
+            r.estimatedPoints = 0
+        return
+
+    # Level 1: allocate budget to groups
+    group_weights = [
+        sum(
+            r.estimatedPoints * _IMPACT_WEIGHT.get(r.impactLevel, 1)
+            for r in g.recommendations
+        )
+        for g in groups
+    ]
+    group_budgets = _largest_remainder_alloc(
+        [float(w) for w in group_weights], budget,
+    )
+
+    # Level 2: allocate each group's budget to its items
+    for group, g_budget in zip(groups, group_budgets):
+        if g_budget <= 0:
+            for r in group.recommendations:
+                r.estimatedPoints = 0
+            continue
+
+        item_weights = [
+            r.estimatedPoints * _IMPACT_WEIGHT.get(r.impactLevel, 1)
+            for r in group.recommendations
+        ]
+        item_alloc = _largest_remainder_alloc(
+            [float(w) for w in item_weights], g_budget,
+        )
+        for rec, pts in zip(group.recommendations, item_alloc):
+            rec.estimatedPoints = pts
 
 
 # ---------------------------------------------------------------------------
@@ -578,15 +658,21 @@ def generate_recommendations(
     ]
 
     groups: list[RecommendationGroup] = []
-    total_gain = 0
 
     for group in builders:
         if group is None:
             continue
         # Sort recommendations within each group by impact
         group.recommendations.sort(key=_sort_key)
-        total_gain += sum(r.estimatedPoints for r in group.recommendations)
         groups.append(group)
+
+    # Budget = headroom to reach 100 from the current overall score
+    budget = max(0, 100 - evaluation.overallScore)
+    _normalise_points(groups, budget)
+
+    total_gain = sum(
+        r.estimatedPoints for g in groups for r in g.recommendations
+    )
 
     # Sort groups: group with highest total estimated gain first
     groups.sort(

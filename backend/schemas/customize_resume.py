@@ -7,7 +7,6 @@ from schemas.extract_resume import (
     ExtractResumeResponse,
     ProjectItem,
 )
-from schemas.gap_analysis import GapAnalysisResponse
 
 
 # Internal model that mirrors ExtractResumeResponse with extra="ignore"
@@ -38,7 +37,12 @@ class CustomizeResumeRequest(BaseModel):
 
     resume: ExtractResumeResponse
     jd: AnalyzeJDResponse
-    gap_analysis: GapAnalysisResponse | None = Field(default=None, alias="gapAnalysis")
+    accepted_recommendations: list[str] = Field(
+        default_factory=list, alias="acceptedRecommendations",
+    )
+    rejected_recommendations: list[str] = Field(
+        default_factory=list, alias="rejectedRecommendations",
+    )
 
 
 class CustomizeResumeResponse(BaseModel):

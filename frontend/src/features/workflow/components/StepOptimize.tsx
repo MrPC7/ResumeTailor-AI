@@ -90,30 +90,37 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
   // ── Apply accepted recommendations ───────────────────────────────────
   const applyMutation = useMutation({
     mutationFn: async (): Promise<OptimizeResult> => {
-      // Build accepted recommendations list from grouped rec report
+      // Build accepted and rejected recommendation lists
       const acceptedRecs: string[] = [];
+      const rejectedRecs: string[] = [];
+
       if (recReport) {
         for (const group of recReport.groups) {
           for (const rec of group.recommendations) {
             if (selectedActions[rec.id]) {
               acceptedRecs.push(rec.title);
+            } else {
+              rejectedRecs.push(rec.title);
             }
           }
         }
       } else {
         // Fallback to flat recommendedActions if recs never loaded
-        acceptedRecs.push(
-          ...atsResult!.recommendedActions.filter((_, i) => selectedActions[String(i)]),
-        );
+        for (let i = 0; i < atsResult!.recommendedActions.length; i++) {
+          if (selectedActions[String(i)]) {
+            acceptedRecs.push(atsResult!.recommendedActions[i]);
+          } else {
+            rejectedRecs.push(atsResult!.recommendedActions[i]);
+          }
+        }
       }
 
-      const gapAnalysis = {
-        matchedSkills: [] as string[],
-        missingSkills: atsResult!.missingKeywords,
-        recommendations: acceptedRecs,
-      };
-
-      const { customizedResume } = await customizeResume(resume, analyzedJD, gapAnalysis);
+      const { customizedResume } = await customizeResume(
+        resume,
+        analyzedJD,
+        acceptedRecs,
+        rejectedRecs,
+      );
       const atsComparison = await compareATS(resume, customizedResume, analyzedJD);
 
       return { customizedResume, atsComparison };

@@ -1,7 +1,6 @@
 import { jsonPost } from "@/features/workflow/services/api";
 import type {
   AnalyzedJD,
-  GapAnalysis,
   StructuredResume,
 } from "@/features/workflow/types/workflow.types";
 
@@ -13,11 +12,13 @@ type CustomizeResumeResponse = {
 export function customizeResume(
   resume: StructuredResume,
   jd: AnalyzedJD,
-  gapAnalysis: GapAnalysis
+  acceptedRecommendations: string[],
+  rejectedRecommendations: string[],
 ): Promise<CustomizeResumeResponse> {
   return jsonPost<CustomizeResumeResponse>("/api/customize-resume", {
     resume,
     jd,
-    gapAnalysis,
+    acceptedRecommendations,
+    rejectedRecommendations,
   });
 }

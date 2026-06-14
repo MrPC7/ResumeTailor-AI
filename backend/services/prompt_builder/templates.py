@@ -111,44 +111,62 @@ Job Description:
 # Resume Customization
 # ---------------------------------------------------------------------------
 _RESUME_CUSTOMIZATION_SYSTEM = (
-    "You are an expert resume writer and career coach specialising in ATS optimisation. "
-    "Your task is to tailor resume content to a specific job description "
-    "while preserving factual accuracy — never fabricate skills or experience. "
+    "You are an expert resume writer and ATS optimisation specialist. "
+    "Your task is to apply ONLY the accepted recommendations to tailor the resume. "
+    "You must NEVER apply rejected recommendations. "
+    "You must NEVER fabricate any information — only rewrite existing content. "
     "Return ONLY a valid JSON object. "
     "Do not include markdown code fences, backticks, or any text outside the JSON object."
 )
 
 _RESUME_CUSTOMIZATION_USER = """\
-Tailor the resume below to match the job description analysis and gap analysis provided.
+Apply ONLY the accepted recommendations below to tailor this resume for the target job.
 
-Critical Integrity Rules — NEVER violate under any circumstance:
-- NEVER add skills, tools, or technologies that are not already present in the original resume.
-- NEVER fabricate work experience, job titles, companies, durations, or achievements.
-- NEVER invent projects, certifications, or degrees.
-- NEVER change name, email, phone, company, position, duration, institution, degree, year, or project technologies.
-- You may ONLY rewrite descriptive text — not invent new facts.
+═══════════════════════════════════════════
+ABSOLUTE INTEGRITY RULES — VIOLATION = FAILURE
+═══════════════════════════════════════════
 
-Customization Tasks (apply all five):
-1. Rewrite summary: Align it with the role title, seniority, and top responsibilities from the JD.
-2. Reorder skills: Move requiredSkills and preferredSkills that already exist in the resume to the front.
-3. Optimize experience bullets: Rewrite descriptions to surface JD-relevant achievements; incorporate atsKeywords naturally where factually accurate.
-4. Improve ATS alignment: Ensure the most impactful atsKeywords appear in the summary and experience descriptions where truthful.
-5. Suggest missing keywords: For each skill in missingSkills, add a specific suggestion the candidate can act on.
+1. NEVER apply any recommendation from the REJECTED list.
+2. NEVER invent, fabricate, or hallucinate:
+   - Work experience, job titles, companies, or employment durations
+   - Projects that do not exist in the original resume
+   - Skills, tools, or technologies not already present in the original resume
+   - Certifications, degrees, institutions, or graduation years
+   - Metrics, numbers, or achievements that are not in the original
+3. NEVER change these identity fields: name, email, phone, company, position, duration, institution, degree, year, project name, project technologies.
+4. You may ONLY:
+   - Rewrite summary text to align with the target role
+   - Rewrite experience bullet descriptions using JD-relevant phrasing (from EXISTING facts only)
+   - Rewrite project descriptions to highlight JD-relevant aspects (from EXISTING facts only)
+   - Reorder skills so JD-relevant skills appear first (do NOT add new skills)
+   - Incorporate ATS keywords into existing descriptions WHERE factually accurate
+
+═══════════════════════════════════════════
+ACCEPTED RECOMMENDATIONS (apply these)
+═══════════════════════════════════════════
+{accepted_json}
+
+═══════════════════════════════════════════
+REJECTED RECOMMENDATIONS (DO NOT apply)
+═══════════════════════════════════════════
+{rejected_json}
+
+═══════════════════════════════════════════
 
 Required JSON structure:
 {{
   "customizedResume": {{
-    "name": "unchanged",
-    "email": "unchanged",
-    "phone": "unchanged",
-    "summary": "rewritten to target the role and seniority",
-    "skills": ["reordered — requiredSkills and preferredSkills from the JD listed first, rest follow"],
+    "name": "unchanged from original",
+    "email": "unchanged from original",
+    "phone": "unchanged from original",
+    "summary": "rewritten ONLY if an accepted recommendation requires it, otherwise unchanged",
+    "skills": ["reordered — JD-relevant skills first, NO new skills added"],
     "experience": [
       {{
         "company": "unchanged",
         "position": "unchanged",
         "duration": "unchanged",
-        "description": "rewritten to emphasise JD-relevant responsibilities and achievements"
+        "description": "rewritten ONLY to apply accepted recommendations using existing facts"
       }}
     ],
     "education": [
@@ -161,24 +179,21 @@ Required JSON structure:
     "projects": [
       {{
         "name": "unchanged",
-        "description": "rewritten to highlight JD-relevant aspects where accurate",
-        "technologies": ["unchanged"]
+        "description": "rewritten ONLY to apply accepted recommendations using existing facts",
+        "technologies": ["unchanged — same list as original"]
       }}
     ]
   }},
   "suggestions": [
-    "Concise, actionable suggestion — one per missing skill or improvement opportunity"
+    "Actionable advice for improvements the candidate must do manually (e.g. learn a missing skill, get a certification)"
   ]
 }}
 
-Resume JSON:
+Original Resume JSON:
 {resume_json}
 
-Job Description Analysis JSON:
-{jd_json}
-
-Gap Analysis JSON:
-{gap_json}"""
+Target Job Description Analysis JSON:
+{jd_json}"""
 
 
 # ---------------------------------------------------------------------------

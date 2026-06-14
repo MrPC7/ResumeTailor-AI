@@ -6,7 +6,6 @@ from pydantic import ValidationError
 
 from schemas.customize_resume import CustomizeResumeRaw, CustomizeResumeRequest, CustomizeResumeResponse
 from schemas.extract_resume import ExtractResumeResponse
-from schemas.gap_analysis import GapAnalysisResponse
 from services.prompt_builder import PromptType, prompt_builder
 from services.resume_extractor.gemini_client import (
     GeminiAPIError,
@@ -17,13 +16,6 @@ from services.resume_extractor.gemini_client import (
 
 class ResumeCustomizationError(Exception):
     """Raised when customization fails after all retry attempts."""
-
-
-def _build_empty_gap_json() -> str:
-    return json.dumps(
-        {"matchedSkills": [], "missingSkills": [], "recommendations": []},
-        indent=2,
-    )
 
 
 class ResumeCustomizer:
@@ -54,17 +46,15 @@ class ResumeCustomizer:
     async def customize(self, payload: CustomizeResumeRequest) -> CustomizeResumeResponse:
         resume_json = json.dumps(payload.resume.model_dump(), indent=2)
         jd_json = json.dumps(payload.jd.model_dump(), indent=2)
-        gap_json = (
-            json.dumps(payload.gap_analysis.model_dump(), indent=2)
-            if payload.gap_analysis
-            else _build_empty_gap_json()
-        )
+        accepted_json = json.dumps(payload.accepted_recommendations, indent=2)
+        rejected_json = json.dumps(payload.rejected_recommendations, indent=2)
 
         prompt = prompt_builder.build(
             PromptType.RESUME_CUSTOMIZATION,
             resume_json=resume_json,
             jd_json=jd_json,
-            gap_json=gap_json,
+            accepted_json=accepted_json,
+            rejected_json=rejected_json,
         ).to_single_prompt()
 
         last_error: Exception | None = None
