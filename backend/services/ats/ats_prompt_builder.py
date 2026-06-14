@@ -32,6 +32,7 @@ Also provide:
 - **confidence** — Your confidence in the evaluation accuracy (0–100).
 - **strengths** — Top 3–5 resume strengths for this role.
 - **weaknesses** — Top 3–5 gaps or weaknesses.
+- **matchedKeywords** — Specific keywords/skills from the JD that ARE found in the resume.
 - **missingKeywords** — Specific keywords/skills from the JD missing in the resume.
 - **recommendedActions** — 5–8 concrete, actionable steps to improve ATS compatibility.
 
@@ -48,12 +49,14 @@ Required JSON structure:
   }},
   "strengths": ["..."],
   "weaknesses": ["..."],
+  "matchedKeywords": ["..."],
   "missingKeywords": ["..."],
   "recommendedActions": ["..."]
 }}
 
 Rules:
 - Base scores on factual evidence in the resume — do not fabricate.
+- matchedKeywords must only contain terms that genuinely appear in BOTH the JD and the resume.
 - missingKeywords must only contain terms that genuinely appear in the JD but not the resume.
 - recommendedActions must be specific and actionable (e.g. "Add Python to your skills section").
 - If information is insufficient for a dimension, score conservatively and explain in weaknesses.

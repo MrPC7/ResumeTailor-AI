@@ -25,6 +25,7 @@ const ATSEvaluationResultSchema = z.object({
   scores: ATSScoresSchema,
   strengths: z.array(z.string()),
   weaknesses: z.array(z.string()),
+  matchedKeywords: z.array(z.string()),
   missingKeywords: z.array(z.string()),
   recommendedActions: z.array(z.string()),
 });

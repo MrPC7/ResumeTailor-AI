@@ -19,7 +19,6 @@ from api.ats import router as ats_router
 from api.customize_resume import router as customize_resume_router
 from api.export import router as export_router
 from api.extract_resume import router as extract_resume_router
-from api.gap_analysis import router as gap_analysis_router
 from api.parse_resume import router as parse_resume_router
 from api.router import api_router
 from api.upload import router as upload_router
@@ -79,7 +78,6 @@ app.include_router(upload_router, prefix="/api")
 app.include_router(parse_resume_router, prefix="/api")
 app.include_router(extract_resume_router, prefix="/api")
 app.include_router(analyze_jd_router, prefix="/api")
-app.include_router(gap_analysis_router, prefix="/api")
 app.include_router(customize_resume_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
 app.include_router(ats_router, prefix="/api")

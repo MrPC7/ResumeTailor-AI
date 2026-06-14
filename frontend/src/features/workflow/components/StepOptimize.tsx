@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
   AlertCircle,
+  CheckCircle2,
   Loader2,
   ShieldCheck,
   Sparkles,
   ThumbsDown,
   ThumbsUp,
   TrendingUp,
+  XCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { ATSScoreCard } from "@/components/ats/ATSScoreCard";
 import { ATSBreakdown } from "@/components/ats/ATSBreakdown";
 import { ATSComparisonCard } from "@/components/ats/ATSComparisonCard";
+import { MatchedKeywords } from "@/components/ats/MatchedKeywords";
 import { MissingKeywords } from "@/components/ats/MissingKeywords";
 import { RecommendationPanel } from "@/components/recommendations/RecommendationPanel";
 import { analyzeATS, compareATS, predictPotentialScore, fetchRecommendations } from "@/features/workflow/services/ats.service";
@@ -48,6 +51,7 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
   const [error, setError] = useState<string | null>(null);
   const [selectedActions, setSelectedActions] = useState<Record<string, boolean>>({});
   const [optimizeResult, setOptimizeResult] = useState<OptimizeResult | null>(null);
+  const [appliedSummary, setAppliedSummary] = useState<{ accepted: string[]; rejected: string[] } | null>(null);
   const startedRef = useRef(false);
 
   // ── Phase 1: Auto-compute original ATS score ─────────────────────────
@@ -89,7 +93,7 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
 
   // ── Apply accepted recommendations ───────────────────────────────────
   const applyMutation = useMutation({
-    mutationFn: async (): Promise<OptimizeResult> => {
+    mutationFn: async () => {
       // Build accepted and rejected recommendation lists
       const acceptedRecs: string[] = [];
       const rejectedRecs: string[] = [];
@@ -123,10 +127,11 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
       );
       const atsComparison = await compareATS(resume, customizedResume, analyzedJD);
 
-      return { customizedResume, atsComparison };
+      return { customizedResume, atsComparison, acceptedRecs, rejectedRecs };
     },
     onSuccess: (result) => {
-      setOptimizeResult(result);
+      setOptimizeResult({ customizedResume: result.customizedResume, atsComparison: result.atsComparison });
+      setAppliedSummary({ accepted: result.acceptedRecs, rejected: result.rejectedRecs });
       setPhase("done");
     },
     onError: (e) => {
@@ -180,8 +185,12 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
 
   // ── Done state ───────────────────────────────────────────────────────
   if (phase === "done" && optimizeResult) {
+    const { atsComparison } = optimizeResult;
+    const delta = atsComparison.afterScore - atsComparison.beforeScore;
+
     return (
       <div className="space-y-6">
+        {/* Header */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -189,13 +198,148 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
               Optimization Complete
             </CardTitle>
             <CardDescription>
-              Your resume has been optimized based on your selected recommendations.
+              Your resume has been optimized.{" "}
+              {delta > 0
+                ? `ATS score improved by ${delta} points.`
+                : "Review the detailed breakdown below."}
             </CardDescription>
           </CardHeader>
+        </Card>
+
+        {/* Actual ATS Improvement — before/after with per-dimension */}
+        <ATSComparisonCard comparison={atsComparison} />
+
+        {/* After-optimization score breakdown */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Optimized Score Breakdown</CardTitle>
+            <CardDescription>Per-dimension scores after optimization.</CardDescription>
+          </CardHeader>
           <CardContent>
-            <ATSComparisonCard comparison={optimizeResult.atsComparison} />
+            <ATSBreakdown scores={atsComparison.after.scores} />
           </CardContent>
         </Card>
+
+        {/* Strengths & Weaknesses — post-optimization */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {atsComparison.after.strengths.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ThumbsUp className="h-4 w-4 text-emerald-600" />
+                  Strengths ({atsComparison.after.strengths.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-1.5">
+                  {atsComparison.after.strengths.map((s, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {atsComparison.after.weaknesses.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ThumbsDown className="h-4 w-4 text-amber-600" />
+                  Remaining Gaps ({atsComparison.after.weaknesses.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-1.5">
+                  {atsComparison.after.weaknesses.map((w, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                      {w}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Matched + Missing Keywords — post-optimization */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {atsComparison.after.matchedKeywords.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">
+                  Matched Keywords ({atsComparison.after.matchedKeywords.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MatchedKeywords keywords={atsComparison.after.matchedKeywords} />
+              </CardContent>
+            </Card>
+          )}
+
+          {atsComparison.after.missingKeywords.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">
+                  Still Missing ({atsComparison.after.missingKeywords.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MissingKeywords keywords={atsComparison.after.missingKeywords} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Resume Optimization Summary */}
+        {appliedSummary && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Optimization Summary</CardTitle>
+              <CardDescription>
+                {appliedSummary.accepted.length} applied, {appliedSummary.rejected.length} skipped
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {appliedSummary.accepted.length > 0 && (
+                <div>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-600">
+                    Applied
+                  </p>
+                  <ul className="space-y-1">
+                    {appliedSummary.accepted.map((a, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                        {a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {appliedSummary.rejected.length > 0 && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Skipped
+                    </p>
+                    <ul className="space-y-1">
+                      {appliedSummary.rejected.map((r, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-400">
+                          <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          {r}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex items-center justify-between gap-3">
           <Button variant="ghost" size="sm" onClick={onReset}>
@@ -316,20 +460,36 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
         )}
       </div>
 
-      {/* Missing Keywords */}
-      {atsResult!.missingKeywords.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">
-              Missing Keywords ({atsResult!.missingKeywords.length})
-            </CardTitle>
-            <CardDescription>These keywords were not found in your resume.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MissingKeywords keywords={atsResult!.missingKeywords} />
-          </CardContent>
-        </Card>
-      )}
+      {/* Matched & Missing Keywords */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {atsResult!.matchedKeywords.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">
+                Matched Keywords ({atsResult!.matchedKeywords.length})
+              </CardTitle>
+              <CardDescription>Keywords from the JD found in your resume.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MatchedKeywords keywords={atsResult!.matchedKeywords} />
+            </CardContent>
+          </Card>
+        )}
+
+        {atsResult!.missingKeywords.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">
+                Missing Keywords ({atsResult!.missingKeywords.length})
+              </CardTitle>
+              <CardDescription>These keywords were not found in your resume.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MissingKeywords keywords={atsResult!.missingKeywords} />
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       <Separator />
 

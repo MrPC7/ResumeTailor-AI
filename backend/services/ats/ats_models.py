@@ -21,6 +21,7 @@ class ATSEvaluationResult(BaseModel):
     scores: ATSScores
     strengths: list[str]
     weaknesses: list[str]
+    matchedKeywords: list[str]
     missingKeywords: list[str]
     recommendedActions: list[str]
 

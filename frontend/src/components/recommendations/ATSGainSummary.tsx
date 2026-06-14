@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, TrendingUp, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {

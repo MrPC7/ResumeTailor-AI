@@ -1,6 +1,5 @@
+import { getBaseUrl } from "@/features/workflow/services/api";
 import type { StructuredResume } from "@/features/workflow/types/workflow.types";
-
-type ApiErrorPayload = { detail?: string };
 
 export type ExportFormat = "pdf" | "docx";
 
@@ -9,12 +8,6 @@ export type ExportPayload = {
   format: ExportFormat;
   fileName?: string;
 };
-
-function getBaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_API_URL;
-  if (!url) throw new Error("NEXT_PUBLIC_API_URL is not defined.");
-  return url;
-}
 
 function getDownloadFileName(contentDisposition: string | null, fallback: string): string {
   if (!contentDisposition) return fallback;
@@ -37,7 +30,7 @@ export async function exportResume(
   if (!response.ok) {
     let detail = "Failed to export resume.";
     try {
-      const body = (await response.json()) as ApiErrorPayload;
+      const body = (await response.json()) as { detail?: string };
       if (body.detail) detail = body.detail;
     } catch {
       // Keep default message.

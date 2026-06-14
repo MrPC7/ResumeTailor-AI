@@ -39,12 +39,6 @@ export type AnalyzedJD = {
   responsibilities: string[];
 };
 
-export type GapAnalysis = {
-  matchedSkills: string[];
-  missingSkills: string[];
-  recommendations: string[];
-};
-
 export type UploadStepData = {
   rawText: string;
   resume: StructuredResume;
@@ -69,6 +63,7 @@ export type ATSEvaluationResult = {
   scores: ATSScores;
   strengths: string[];
   weaknesses: string[];
+  matchedKeywords: string[];
   missingKeywords: string[];
   recommendedActions: string[];
 };
