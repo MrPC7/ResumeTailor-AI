@@ -2,10 +2,17 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
 
-from schemas.ats import ATSAnalyzeRequest, ATSCompareRequest
+from schemas.ats import ATSAnalyzeRequest, ATSCompareRequest, ATSPotentialRequest
 from services.ats import ats_evaluator
 from services.ats.ats_evaluator import ATSEvaluationError
-from services.ats.ats_models import ATSComparisonResult, ATSEvaluationResult
+from services.ats.ats_models import (
+    ATSComparisonResult,
+    ATSEvaluationResult,
+    PotentialScoreResult,
+    RecommendationReport,
+)
+from services.ats.potential_score_engine import predict_potential_score
+from services.ats.recommendation_engine import generate_recommendations
 
 router = APIRouter(prefix="/ats", tags=["ats"])
 
@@ -23,6 +30,28 @@ async def analyze_ats(body: ATSAnalyzeRequest) -> ATSEvaluationResult:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to complete ATS analysis.",
+        ) from exc
+
+
+@router.post("/potential", response_model=PotentialScoreResult)
+async def predict_ats_potential(body: ATSPotentialRequest) -> PotentialScoreResult:
+    try:
+        return predict_potential_score(body.evaluation, body.resume, body.jobDescription)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to predict potential score.",
+        ) from exc
+
+
+@router.post("/recommendations", response_model=RecommendationReport)
+async def get_recommendations(body: ATSPotentialRequest) -> RecommendationReport:
+    try:
+        return generate_recommendations(body.evaluation, body.resume, body.jobDescription)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to generate recommendations.",
         ) from exc
 
 

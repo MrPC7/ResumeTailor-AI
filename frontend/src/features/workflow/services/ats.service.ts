@@ -4,6 +4,8 @@ import type {
   AnalyzedJD,
   ATSEvaluationResult,
   ATSComparisonResult,
+  PotentialScoreResult,
+  RecommendationReport,
   StructuredResume,
 } from "@/features/workflow/types/workflow.types";
 
@@ -35,6 +37,33 @@ const ATSComparisonResultSchema = z.object({
   after: ATSEvaluationResultSchema,
 });
 
+const PotentialScoreResultSchema = z.object({
+  currentScore: z.number().int().min(0).max(100),
+  potentialScore: z.number().int().min(0).max(100),
+  improvementPotential: z.number().int().min(0),
+});
+
+const ImpactLevelSchema = z.enum(["critical", "high", "medium", "low"]);
+
+const RecommendationSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  impactLevel: ImpactLevelSchema,
+  estimatedPoints: z.number().int().min(0),
+});
+
+const RecommendationGroupSchema = z.object({
+  groupId: z.string(),
+  groupTitle: z.string(),
+  recommendations: z.array(RecommendationSchema),
+});
+
+const RecommendationReportSchema = z.object({
+  totalEstimatedGain: z.number().int().min(0),
+  groups: z.array(RecommendationGroupSchema),
+});
+
 // ── Service functions ─────────────────────────────────────────────────────
 
 export async function analyzeATS(
@@ -43,6 +72,19 @@ export async function analyzeATS(
 ): Promise<ATSEvaluationResult> {
   const raw = await jsonPost<unknown>("/api/ats/analyze", { resume, jobDescription });
   return ATSEvaluationResultSchema.parse(raw);
+}
+
+export async function predictPotentialScore(
+  evaluation: ATSEvaluationResult,
+  resume: StructuredResume,
+  jobDescription: AnalyzedJD,
+): Promise<PotentialScoreResult> {
+  const raw = await jsonPost<unknown>("/api/ats/potential", {
+    evaluation,
+    resume,
+    jobDescription,
+  });
+  return PotentialScoreResultSchema.parse(raw);
 }
 
 export async function compareATS(
@@ -56,4 +98,17 @@ export async function compareATS(
     jobDescription,
   });
   return ATSComparisonResultSchema.parse(raw);
+}
+
+export async function fetchRecommendations(
+  evaluation: ATSEvaluationResult,
+  resume: StructuredResume,
+  jobDescription: AnalyzedJD,
+): Promise<RecommendationReport> {
+  const raw = await jsonPost<unknown>("/api/ats/recommendations", {
+    evaluation,
+    resume,
+    jobDescription,
+  });
+  return RecommendationReportSchema.parse(raw);
 }

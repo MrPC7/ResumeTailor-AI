@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 from schemas.analyze_jd import AnalyzeJDResponse
 from schemas.extract_resume import ExtractResumeResponse
+from services.ats.ats_models import ATSEvaluationResult
 
 
 class ATSAnalyzeRequest(BaseModel):
@@ -18,4 +19,12 @@ class ATSCompareRequest(BaseModel):
 
     originalResume: ExtractResumeResponse
     customizedResume: ExtractResumeResponse
+    jobDescription: AnalyzeJDResponse
+
+
+class ATSPotentialRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    evaluation: ATSEvaluationResult
+    resume: ExtractResumeResponse
     jobDescription: AnalyzeJDResponse

@@ -81,6 +81,33 @@ export type ATSComparisonResult = {
   after: ATSEvaluationResult;
 };
 
+export type PotentialScoreResult = {
+  currentScore: number;
+  potentialScore: number;
+  improvementPotential: number;
+};
+
+export type ImpactLevel = "critical" | "high" | "medium" | "low";
+
+export type Recommendation = {
+  id: string;
+  title: string;
+  description: string;
+  impactLevel: ImpactLevel;
+  estimatedPoints: number;
+};
+
+export type RecommendationGroup = {
+  groupId: string;
+  groupTitle: string;
+  recommendations: Recommendation[];
+};
+
+export type RecommendationReport = {
+  totalEstimatedGain: number;
+  groups: RecommendationGroup[];
+};
+
 export type OptimizeResult = {
   customizedResume: StructuredResume;
   atsComparison: ATSComparisonResult;
