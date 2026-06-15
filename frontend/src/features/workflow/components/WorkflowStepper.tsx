@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Check, Download, FileText, Search, Upload } from "lucide-react";
+import { Check, Download, Eye, FileText, Search, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WorkflowStep } from "@/features/workflow/types/workflow.types";
 
@@ -14,10 +14,11 @@ const STEPS: Step[] = [
   { id: "upload", label: "Upload Resume", icon: <Upload className="h-4 w-4" /> },
   { id: "jd", label: "Job Description", icon: <FileText className="h-4 w-4" /> },
   { id: "optimize", label: "Optimize", icon: <Search className="h-4 w-4" /> },
+  { id: "preview", label: "Preview", icon: <Eye className="h-4 w-4" /> },
   { id: "download", label: "Download", icon: <Download className="h-4 w-4" /> },
 ];
 
-const STEP_ORDER: WorkflowStep[] = ["upload", "jd", "optimize", "download"];
+const STEP_ORDER: WorkflowStep[] = ["upload", "jd", "optimize", "preview", "download"];
 
 type Props = { currentStep: WorkflowStep };
 

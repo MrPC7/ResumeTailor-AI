@@ -34,12 +34,16 @@ export function useWorkflow() {
   }, []);
 
   const completeOptimize = useCallback((result: OptimizeResult) => {
-    setState((prev) => ({ ...prev, step: "download", optimizeResult: result }));
+    setState((prev) => ({ ...prev, step: "preview", optimizeResult: result }));
+  }, []);
+
+  const completePreview = useCallback(() => {
+    setState((prev) => ({ ...prev, step: "download" }));
   }, []);
 
   const reset = useCallback(() => {
     setState(INITIAL);
   }, []);
 
-  return { ...state, completeUpload, completeJD, completeOptimize, reset };
+  return { ...state, completeUpload, completeJD, completeOptimize, completePreview, reset };
 }

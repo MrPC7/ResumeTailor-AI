@@ -346,7 +346,7 @@ export function StepOptimize({ resume, analyzedJD, onComplete, onReset }: Props)
             ← Start Over
           </Button>
           <Button onClick={() => onComplete(optimizeResult)}>
-            Proceed to Download →
+            Preview Resume →
           </Button>
         </div>
       </div>

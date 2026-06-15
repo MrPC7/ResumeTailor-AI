@@ -3,6 +3,7 @@
 import { StepDownload } from "@/features/workflow/components/StepDownload";
 import { StepJD } from "@/features/workflow/components/StepJD";
 import { StepOptimize } from "@/features/workflow/components/StepOptimize";
+import { StepPreview } from "@/features/workflow/components/StepPreview";
 import { StepUpload } from "@/features/workflow/components/StepUpload";
 import { WorkflowStepper } from "@/features/workflow/components/WorkflowStepper";
 import { useWorkflow } from "@/features/workflow/hooks/use-workflow";
@@ -37,6 +38,15 @@ export default function Home() {
               resume={workflow.uploadData.resume}
               analyzedJD={workflow.jdData.analyzedJD}
               onComplete={workflow.completeOptimize}
+              onReset={workflow.reset}
+            />
+          )}
+
+          {workflow.step === "preview" && workflow.uploadData && workflow.optimizeResult && (
+            <StepPreview
+              originalResume={workflow.uploadData.resume}
+              optimizeResult={workflow.optimizeResult}
+              onComplete={workflow.completePreview}
               onReset={workflow.reset}
             />
           )}

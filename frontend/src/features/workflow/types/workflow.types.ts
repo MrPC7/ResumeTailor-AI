@@ -1,4 +1,4 @@
-export type WorkflowStep = "upload" | "jd" | "optimize" | "download";
+export type WorkflowStep = "upload" | "jd" | "optimize" | "preview" | "download";
 
 export type ExperienceItem = {
   company: string;
