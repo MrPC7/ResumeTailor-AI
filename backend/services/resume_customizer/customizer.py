@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from schemas.customize_resume import CustomizeResumeRaw, CustomizeResumeRequest, CustomizeResumeResponse
 from schemas.extract_resume import ExtractResumeResponse
 from services.prompt_builder import PromptType, prompt_builder
-from services.resume_extractor.gemini_client import (
+from services.llm import (
     GeminiAPIError,
     GeminiParseError,
     LLMClient,

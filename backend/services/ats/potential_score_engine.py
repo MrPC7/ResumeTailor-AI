@@ -12,7 +12,7 @@ import re
 
 from schemas.analyze_jd import AnalyzeJDResponse
 from schemas.extract_resume import ExtractResumeResponse
-from services.ats.ats_models import ATSEvaluationResult, PotentialScoreResult
+from schemas.ats_models import ATSEvaluationResult, PotentialScoreResult
 
 
 # ---------------------------------------------------------------------------

@@ -10,7 +10,7 @@ from schemas.cover_letter import (
     GenerateCoverLetterResponse,
 )
 from services.prompt_builder import PromptType, prompt_builder
-from services.resume_extractor.gemini_client import (
+from services.llm import (
     GeminiAPIError,
     GeminiParseError,
     LLMClient,

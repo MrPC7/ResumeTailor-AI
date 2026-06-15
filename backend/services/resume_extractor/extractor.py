@@ -6,7 +6,7 @@ from pydantic import ValidationError
 
 from schemas.extract_resume import StructuredResume
 from services.prompt_builder import PromptType, prompt_builder
-from services.resume_extractor.gemini_client import (
+from services.llm import (
     GeminiAPIError,
     GeminiParseError,
     LLMClient,

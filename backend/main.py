@@ -24,7 +24,6 @@ from api.export import router as export_router
 from api.extract_resume import router as extract_resume_router
 from api.parse_resume import router as parse_resume_router
 from api.router import api_router
-from api.upload import router as upload_router
 from core.config import settings
 from core.errors import (
     AppError,
@@ -100,7 +99,6 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
-app.include_router(upload_router, prefix="/api")
 app.include_router(parse_resume_router, prefix="/api")
 app.include_router(extract_resume_router, prefix="/api")
 app.include_router(analyze_jd_router, prefix="/api")

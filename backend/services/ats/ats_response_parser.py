@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import ValidationError
 
-from services.ats.ats_models import ATSEvaluationResult
+from schemas.ats_models import ATSEvaluationResult
 
 
 class ATSParseError(Exception):

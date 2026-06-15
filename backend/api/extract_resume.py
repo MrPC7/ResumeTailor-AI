@@ -6,7 +6,7 @@ from core.config import settings
 from schemas.extract_resume import ExtractResumeRequest, ExtractResumeResponse
 from services.resume_extractor import resume_extractor
 from services.resume_extractor.extractor import ResumeExtractionError
-from services.resume_extractor.gemini_client import GeminiAPIError
+from services.llm import GeminiAPIError
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)

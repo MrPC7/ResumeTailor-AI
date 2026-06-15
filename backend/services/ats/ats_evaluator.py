@@ -1,14 +1,16 @@
 """AI-powered ATS evaluator — orchestrates LLM calls with retry logic."""
 from __future__ import annotations
 
+import json
 import logging
 
 from schemas.analyze_jd import AnalyzeJDResponse
 from schemas.extract_resume import ExtractResumeResponse
-from services.ats.ats_models import ATSComparisonResult, ATSEvaluationResult
-from services.ats.ats_prompt_builder import build_ats_evaluation_prompt
+from schemas.ats_models import ATSComparisonResult, ATSEvaluationResult
 from services.ats.ats_response_parser import ATSParseError, parse_ats_response
-from services.resume_extractor.gemini_client import LLMAPIError, LLMClient, LLMParseError
+from services.prompt_builder.builder import PromptBuilder
+from services.prompt_builder.types import PromptType
+from services.llm import LLMAPIError, LLMClient, LLMParseError
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,7 @@ class ATSEvaluator:
     def __init__(self, client: LLMClient, max_retries: int = 2) -> None:
         self._client = client
         self._max_retries = max(1, max_retries)
+        self._prompt_builder = PromptBuilder()
 
     async def evaluate(
         self,
@@ -30,7 +33,12 @@ class ATSEvaluator:
         jd: AnalyzeJDResponse,
     ) -> ATSEvaluationResult:
         """Evaluate a resume against a JD, retrying on invalid JSON."""
-        prompt = build_ats_evaluation_prompt(resume, jd)
+        built = self._prompt_builder.build(
+            PromptType.ATS_EVALUATION,
+            resume_json=json.dumps(resume.model_dump(), indent=2),
+            jd_json=json.dumps(jd.model_dump(), indent=2),
+        )
+        prompt = built.to_single_prompt()
         last_error: Exception | None = None
 
         for attempt in range(1, self._max_retries + 1):

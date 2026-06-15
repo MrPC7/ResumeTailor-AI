@@ -1,7 +1,6 @@
 """Pydantic models for AI-powered ATS evaluation."""
 from __future__ import annotations
 
-from enum import Enum
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -43,12 +42,6 @@ class PotentialScoreResult(BaseModel):
 # ---------------------------------------------------------------------------
 # Recommendation Intelligence
 # ---------------------------------------------------------------------------
-
-class ImpactLevel(str, Enum):
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
 
 
 class Recommendation(BaseModel):

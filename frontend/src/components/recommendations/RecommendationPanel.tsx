@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Loader2, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ATSGainSummary } from "@/components/recommendations/ATSGainSummary";
 import { RecommendationToolbar } from "@/components/recommendations/RecommendationToolbar";

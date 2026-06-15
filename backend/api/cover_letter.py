@@ -6,7 +6,7 @@ from core.config import settings
 from schemas.cover_letter import GenerateCoverLetterRequest, GenerateCoverLetterResponse
 from services.cover_letter_generator import cover_letter_generator
 from services.cover_letter_generator.generator import CoverLetterGenerationError
-from services.resume_extractor.gemini_client import GeminiAPIError
+from services.llm import GeminiAPIError
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)

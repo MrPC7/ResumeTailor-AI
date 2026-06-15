@@ -8,3 +8,4 @@ class PromptType(str, Enum):
     JD_ANALYSIS = "jd_analysis"
     RESUME_CUSTOMIZATION = "resume_customization"
     COVER_LETTER = "cover_letter"
+    ATS_EVALUATION = "ats_evaluation"

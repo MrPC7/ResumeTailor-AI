@@ -6,7 +6,7 @@ from core.config import settings
 from schemas.analyze_jd import AnalyzeJDRequest, AnalyzeJDResponse
 from services.jd_analyzer import jd_analyzer
 from services.jd_analyzer.analyzer import JDAnalysisError
-from services.resume_extractor.gemini_client import GeminiAPIError
+from services.llm import GeminiAPIError
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)

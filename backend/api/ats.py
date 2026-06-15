@@ -1,11 +1,12 @@
-from __future__ import annotations
+from fastapi import APIRouter, HTTPException, Request, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
-from fastapi import APIRouter, HTTPException, status
-
+from core.config import settings
 from schemas.ats import ATSAnalyzeRequest, ATSCompareRequest, ATSPotentialRequest
 from services.ats import ats_evaluator
 from services.ats.ats_evaluator import ATSEvaluationError
-from services.ats.ats_models import (
+from schemas.ats_models import (
     ATSComparisonResult,
     ATSEvaluationResult,
     PotentialScoreResult,
@@ -15,10 +16,12 @@ from services.ats.potential_score_engine import predict_potential_score
 from services.ats.recommendation_engine import generate_recommendations
 
 router = APIRouter(prefix="/ats", tags=["ats"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/analyze", response_model=ATSEvaluationResult)
-async def analyze_ats(body: ATSAnalyzeRequest) -> ATSEvaluationResult:
+@limiter.limit(settings.RATE_LIMIT_LLM)
+async def analyze_ats(request: Request, body: ATSAnalyzeRequest) -> ATSEvaluationResult:
     try:
         return await ats_evaluator.evaluate(body.resume, body.jobDescription)
     except ATSEvaluationError as exc:
@@ -66,7 +69,8 @@ async def get_recommendations(body: ATSPotentialRequest) -> RecommendationReport
 
 
 @router.post("/compare", response_model=ATSComparisonResult)
-async def compare_ats(body: ATSCompareRequest) -> ATSComparisonResult:
+@limiter.limit(settings.RATE_LIMIT_LLM)
+async def compare_ats(request: Request, body: ATSCompareRequest) -> ATSComparisonResult:
     try:
         return await ats_evaluator.compare(
             body.originalResume, body.customizedResume, body.jobDescription

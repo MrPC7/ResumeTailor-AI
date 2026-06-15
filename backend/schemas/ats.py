@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 from schemas.analyze_jd import AnalyzeJDResponse
 from schemas.extract_resume import ExtractResumeResponse
-from services.ats.ats_models import ATSEvaluationResult
+from schemas.ats_models import ATSEvaluationResult
 
 
 class ATSAnalyzeRequest(BaseModel):

@@ -6,7 +6,7 @@ from core.config import settings
 from schemas.customize_resume import CustomizeResumeRequest, CustomizeResumeResponse
 from services.resume_customizer import resume_customizer
 from services.resume_customizer.customizer import ResumeCustomizationError
-from services.resume_extractor.gemini_client import GeminiAPIError
+from services.llm import GeminiAPIError
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
