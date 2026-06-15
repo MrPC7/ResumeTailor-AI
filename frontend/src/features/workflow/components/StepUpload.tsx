@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { CheckCircle2, FileText, Loader2, RefreshCw, UploadCloud } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileText, Loader2, RefreshCw, UploadCloud } from "lucide-react";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -17,13 +17,15 @@ import { extractResume } from "@/features/workflow/services/extract-resume.servi
 import { parseResume } from "@/features/workflow/services/parse-resume.service";
 import type { UploadStepData } from "@/features/workflow/types/workflow.types";
 import { cn } from "@/lib/utils";
+import { pushToast } from "@/lib/toast";
 
-type Phase = "idle" | "parsing" | "extracting" | "done";
+type Phase = "idle" | "parsing" | "extracting" | "validating" | "done";
 
 const PHASE_LABEL: Record<Phase, string> = {
   idle: "",
   parsing: "Parsing document...",
   extracting: "Extracting resume structure...",
+  validating: "Validating resume content...",
   done: "Resume ready",
 };
 
@@ -40,6 +42,14 @@ function toUserFriendlyError(message: string): string {
 
   if (lower.includes("service unavailable") || lower.includes("quota")) {
     return "AI service is temporarily unavailable. Please try again in a moment.";
+  }
+
+  // Resume validation rejection messages — pass through as-is
+  if (
+    lower.includes("does not appear to be a resume") ||
+    lower.includes("could not identify common resume sections")
+  ) {
+    return message;
   }
 
   return "Failed to parse and extract resume. Please try again.";
@@ -78,6 +88,7 @@ export function StepUpload() {
       setPhase("extracting");
       const resume = await extractResume(rawText);
 
+      // If we reach here, the backend validated it's a real resume
       return { rawText, resume };
     },
     onSuccess: (data) => {
@@ -86,7 +97,16 @@ export function StepUpload() {
     },
     onError: (error) => {
       setPhase("idle");
-      setError("file", { message: toUserFriendlyError(error.message) });
+      const msg = toUserFriendlyError(error.message);
+      setError("file", { message: msg });
+
+      // Show toast for resume validation rejections
+      if (
+        error.message.toLowerCase().includes("does not appear to be a resume") ||
+        error.message.toLowerCase().includes("could not identify common resume sections")
+      ) {
+        pushToast({ type: "error", message: msg });
+      }
     },
   });
 
@@ -119,7 +139,7 @@ export function StepUpload() {
     resetForm();
   };
 
-  const isPending = phase === "parsing" || phase === "extracting";
+  const isPending = phase === "parsing" || phase === "extracting" || phase === "validating";
 
   // ── Cached resume: show summary with option to re-upload ──────────────
   if (storedUploadData && !showUploader) {
@@ -207,7 +227,12 @@ export function StepUpload() {
           </div>
 
           {/* Validation error */}
-          {errors.file?.message && <p className="text-sm text-red-600">{errors.file.message}</p>}
+          {errors.file?.message && (
+            <div className="flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-3">
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+              <p className="text-sm text-red-800">{errors.file.message}</p>
+            </div>
+          )}
 
           {/* Selected file info */}
           {selectedFile && !errors.file && (
