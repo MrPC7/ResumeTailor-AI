@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import Response
+
+from core.errors import error_response
 
 
 class MaxBodySizeMiddleware(BaseHTTPMiddleware):
@@ -15,8 +17,12 @@ class MaxBodySizeMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         content_length = request.headers.get("content-length")
         if content_length and int(content_length) > self._max_bytes:
-            return JSONResponse(
+            return error_response(
                 status_code=413,
-                content={"detail": f"Request body too large. Maximum size is {self._max_bytes} bytes."},
+                code="PAYLOAD_TOO_LARGE",
+                message=(
+                    "Request body is too large. "
+                    f"Maximum allowed size is {self._max_bytes} bytes."
+                ),
             )
         return await call_next(request)

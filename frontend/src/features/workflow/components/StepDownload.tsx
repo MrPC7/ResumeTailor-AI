@@ -12,6 +12,7 @@ import {
   type ExportFormat,
 } from "@/features/workflow/services/export-resume.service";
 import type { OptimizeResult } from "@/features/workflow/types/workflow.types";
+import { pushToast } from "@/lib/toast";
 
 type Props = {
   optimizeResult: OptimizeResult;
@@ -34,6 +35,7 @@ export function StepDownload({ optimizeResult, onReset }: Props) {
         fileName: customizedResume.name ?? undefined,
       });
       downloadBlob(result.blob, result.fileName);
+      pushToast({ type: "success", message: `${format.toUpperCase()} download started.` });
     } catch (error) {
       setDownloadError(error instanceof Error ? error.message : "Failed to export resume.");
     } finally {
@@ -42,9 +44,14 @@ export function StepDownload({ optimizeResult, onReset }: Props) {
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(JSON.stringify(customizedResume, null, 2));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(customizedResume, null, 2));
+      setCopied(true);
+      pushToast({ type: "success", message: "Optimized resume JSON copied to clipboard." });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      pushToast({ type: "error", message: "Unable to copy JSON. Please try again." });
+    }
   };
 
   return (

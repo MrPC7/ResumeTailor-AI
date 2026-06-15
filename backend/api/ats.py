@@ -22,9 +22,19 @@ async def analyze_ats(body: ATSAnalyzeRequest) -> ATSEvaluationResult:
     try:
         return await ats_evaluator.evaluate(body.resume, body.jobDescription)
     except ATSEvaluationError as exc:
+        message = str(exc).lower()
+        status_code = (
+            status.HTTP_503_SERVICE_UNAVAILABLE
+            if "api error" in message or "timed out" in message or "provider" in message
+            else status.HTTP_502_BAD_GATEWAY
+        )
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
+            status_code=status_code,
+            detail=(
+                "AI service is temporarily unavailable. Please try again."
+                if status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+                else "AI provider returned an invalid response. Please try again."
+            ),
         ) from exc
     except Exception as exc:
         raise HTTPException(
@@ -62,9 +72,19 @@ async def compare_ats(body: ATSCompareRequest) -> ATSComparisonResult:
             body.originalResume, body.customizedResume, body.jobDescription
         )
     except ATSEvaluationError as exc:
+        message = str(exc).lower()
+        status_code = (
+            status.HTTP_503_SERVICE_UNAVAILABLE
+            if "api error" in message or "timed out" in message or "provider" in message
+            else status.HTTP_502_BAD_GATEWAY
+        )
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
+            status_code=status_code,
+            detail=(
+                "AI service is temporarily unavailable. Please try again."
+                if status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+                else "AI provider returned an invalid response. Please try again."
+            ),
         ) from exc
     except Exception as exc:
         raise HTTPException(

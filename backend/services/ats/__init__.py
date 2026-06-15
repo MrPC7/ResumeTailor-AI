@@ -9,10 +9,12 @@ ats_evaluator = ATSEvaluator(
         primary=GeminiClient(
             api_key=settings.GEMINI_API_KEY,
             model_name=settings.GEMINI_MODEL,
+            timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
         ),
         secondary=GroqClient(
             api_key=settings.GROQ_API_KEY,
             model_name=settings.GROQ_MODEL,
+            timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
         ),
     ),
     max_retries=settings.GEMINI_MAX_RETRIES,

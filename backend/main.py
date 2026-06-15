@@ -5,10 +5,12 @@ from pathlib import Path
 from typing import AsyncIterator
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # google.api_core emits a FutureWarning on Python 3.10 about its upcoming EOL.
 # Suppress it until the venv is migrated to Python 3.11+.
@@ -23,6 +25,14 @@ from api.parse_resume import router as parse_resume_router
 from api.router import api_router
 from api.upload import router as upload_router
 from core.config import settings
+from core.errors import (
+    AppError,
+    error_response,
+    handle_app_error,
+    handle_http_exception,
+    handle_unexpected_exception,
+    handle_validation_exception,
+)
 from core.logging import setup_logging
 from core.middleware import MaxBodySizeMiddleware
 
@@ -62,7 +72,22 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(AppError, handle_app_error)
+app.add_exception_handler(StarletteHTTPException, handle_http_exception)
+app.add_exception_handler(RequestValidationError, handle_validation_exception)
+app.add_exception_handler(Exception, handle_unexpected_exception)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exception_handler(
+    _request: Request,
+    _exc: RateLimitExceeded,
+):
+    return error_response(
+        429,
+        "RATE_LIMITED",
+        "Too many requests. Please wait and try again.",
+    )
 
 app.add_middleware(MaxBodySizeMiddleware, max_bytes=settings.MAX_REQUEST_BODY_BYTES)
 app.add_middleware(
