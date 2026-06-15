@@ -1,15 +1,12 @@
 from fastapi import APIRouter, HTTPException, Request, status
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
-from core.config import settings
+from core.config import limiter, settings
 from schemas.analyze_jd import AnalyzeJDRequest, AnalyzeJDResponse
 from services.jd_analyzer import jd_analyzer
 from services.jd_analyzer.analyzer import JDAnalysisError
-from services.llm import GeminiAPIError
+from services.llm import LLMAPIError
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/analyze-jd", response_model=AnalyzeJDResponse)
@@ -25,7 +22,7 @@ async def analyze_jd(request: Request, body: AnalyzeJDRequest) -> AnalyzeJDRespo
             atsKeywords=result.ats_keywords,
             responsibilities=result.responsibilities,
         )
-    except GeminiAPIError as exc:
+    except LLMAPIError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI service is temporarily unavailable. Please try again.",

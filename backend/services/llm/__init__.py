@@ -4,9 +4,7 @@ from __future__ import annotations
 from core.config import settings
 from services.llm.clients import (
     FallbackLLMClient,
-    GeminiAPIError,
     GeminiClient,
-    GeminiParseError,
     GroqClient,
     LLMAPIError,
     LLMClient,
@@ -15,9 +13,7 @@ from services.llm.clients import (
 
 __all__ = [
     "FallbackLLMClient",
-    "GeminiAPIError",
     "GeminiClient",
-    "GeminiParseError",
     "GroqClient",
     "LLMAPIError",
     "LLMClient",

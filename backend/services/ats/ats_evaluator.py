@@ -4,12 +4,12 @@ from __future__ import annotations
 import json
 import logging
 
+from pydantic import ValidationError
+
 from schemas.analyze_jd import AnalyzeJDResponse
 from schemas.extract_resume import ExtractResumeResponse
 from schemas.ats_models import ATSComparisonResult, ATSEvaluationResult
-from services.ats.ats_response_parser import ATSParseError, parse_ats_response
-from services.prompt_builder.builder import PromptBuilder
-from services.prompt_builder.types import PromptType
+from services.prompt_builder import PromptType, prompt_builder
 from services.llm import LLMAPIError, LLMClient, LLMParseError
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,6 @@ class ATSEvaluator:
     def __init__(self, client: LLMClient, max_retries: int = 2) -> None:
         self._client = client
         self._max_retries = max(1, max_retries)
-        self._prompt_builder = PromptBuilder()
 
     async def evaluate(
         self,
@@ -33,7 +32,7 @@ class ATSEvaluator:
         jd: AnalyzeJDResponse,
     ) -> ATSEvaluationResult:
         """Evaluate a resume against a JD, retrying on invalid JSON."""
-        built = self._prompt_builder.build(
+        built = prompt_builder.build(
             PromptType.ATS_EVALUATION,
             resume_json=json.dumps(resume.model_dump(), indent=2),
             jd_json=json.dumps(jd.model_dump(), indent=2),
@@ -44,8 +43,8 @@ class ATSEvaluator:
         for attempt in range(1, self._max_retries + 1):
             try:
                 raw = await self._client.generate_json(prompt)
-                return parse_ats_response(raw)
-            except (LLMParseError, ATSParseError) as exc:
+                return ATSEvaluationResult.model_validate(raw)
+            except (LLMParseError, ValidationError) as exc:
                 logger.warning(
                     "ATS evaluation attempt %d/%d failed (parse): %s",
                     attempt,

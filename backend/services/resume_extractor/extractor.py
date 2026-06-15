@@ -7,8 +7,8 @@ from pydantic import ValidationError
 from schemas.extract_resume import StructuredResume
 from services.prompt_builder import PromptType, prompt_builder
 from services.llm import (
-    GeminiAPIError,
-    GeminiParseError,
+    LLMAPIError,
+    LLMParseError,
     LLMClient,
 )
 
@@ -40,9 +40,9 @@ class ResumeExtractor:
 
                 logger.info("Gemini response keys (attempt %d): %s", attempt, list(raw_json.keys()))
                 return StructuredResume.model_validate(raw_json)
-            except GeminiAPIError:
+            except LLMAPIError:
                 raise
-            except (GeminiParseError, ValidationError) as exc:
+            except (LLMParseError, ValidationError) as exc:
                 logger.warning(
                     "Extraction attempt %d/%d failed: %s — %s",
                     attempt, self._max_retries, type(exc).__name__, exc,

@@ -7,9 +7,7 @@ from typing import AsyncIterator
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # google.api_core emits a FutureWarning on Python 3.10 about its upcoming EOL.
@@ -24,7 +22,7 @@ from api.export import router as export_router
 from api.extract_resume import router as extract_resume_router
 from api.parse_resume import router as parse_resume_router
 from api.router import api_router
-from core.config import settings
+from core.config import limiter, settings
 from core.errors import (
     AppError,
     error_response,
@@ -40,11 +38,6 @@ from core.middleware import MaxBodySizeMiddleware
 # Logging
 # ---------------------------------------------------------------------------
 setup_logging()
-
-# ---------------------------------------------------------------------------
-# Rate limiter (in-memory; use Redis backend for multi-process)
-# ---------------------------------------------------------------------------
-limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 
 # ---------------------------------------------------------------------------

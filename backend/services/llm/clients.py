@@ -25,11 +25,6 @@ class LLMParseError(Exception):
     """Raised when an LLM response cannot be decoded as JSON. Retried."""
 
 
-# Aliases so existing code that catches GeminiAPIError / GeminiParseError still works.
-GeminiAPIError = LLMAPIError
-GeminiParseError = LLMParseError
-
-
 # ---------------------------------------------------------------------------
 # Protocol
 # ---------------------------------------------------------------------------

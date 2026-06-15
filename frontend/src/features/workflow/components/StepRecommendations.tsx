@@ -100,6 +100,7 @@ export function StepRecommendations() {
       setPhase("done");
     },
     onError: (e) => {
+      setPhase("select");
       setError(e instanceof Error ? e.message : "Failed to optimize resume.");
     },
   });
@@ -125,12 +126,17 @@ export function StepRecommendations() {
           <CardTitle>Applying Recommendations</CardTitle>
           <CardDescription>Customizing your resume with AI...</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <div className="flex flex-col items-center py-8">
             <Loader2 className="h-10 w-10 animate-spin text-slate-400" />
             <p className="mt-3 text-sm text-slate-500">
               Applying {acceptedCount} recommendation{acceptedCount !== 1 ? "s" : ""}...
             </p>
+          </div>
+          <div className="flex justify-start">
+            <Button variant="outline" size="sm" onClick={() => setPhase("select")}>
+              ← Previous
+            </Button>
           </div>
         </CardContent>
       </Card>

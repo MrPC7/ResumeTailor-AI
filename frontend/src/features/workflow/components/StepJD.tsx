@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useWorkflowStore } from "@/features/workflow/store/workflow.store";
 import { analyzeJD } from "@/features/workflow/services/analyze-jd.service";
 import type { AnalyzedJD } from "@/features/workflow/types/workflow.types";
+import { pushToast } from "@/lib/toast";
 
 const jdSchema = z.object({
   jobDescription: z
@@ -55,6 +56,7 @@ export function StepJD() {
       setAnalyzedJD(data);
       setJobDescriptionValue(variables.jobDescription);
       setMode("review");
+      pushToast({ type: "success", message: `Job description analyzed — ${data.requiredSkills.length} required skills identified.` });
     },
   });
 

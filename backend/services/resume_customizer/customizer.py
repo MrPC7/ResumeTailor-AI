@@ -8,8 +8,8 @@ from schemas.customize_resume import CustomizeResumeRaw, CustomizeResumeRequest,
 from schemas.extract_resume import ExtractResumeResponse
 from services.prompt_builder import PromptType, prompt_builder
 from services.llm import (
-    GeminiAPIError,
-    GeminiParseError,
+    LLMAPIError,
+    LLMParseError,
     LLMClient,
 )
 
@@ -64,10 +64,10 @@ class ResumeCustomizer:
                 raw_json = await self._client.generate_json(prompt)
                 validated = CustomizeResumeRaw.model_validate(raw_json)
                 return self._to_response(validated, payload.resume)
-            except GeminiAPIError:
+            except LLMAPIError:
                 # Non-retryable: missing API key, quota exceeded, network failure.
                 raise
-            except (GeminiParseError, ValidationError) as exc:
+            except (LLMParseError, ValidationError) as exc:
                 # Retryable: malformed JSON or schema mismatch from Gemini.
                 last_error = exc
                 if attempt == self._max_retries:

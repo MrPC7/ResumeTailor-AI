@@ -1,8 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, status
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
-from core.config import settings
+from core.config import limiter, settings
 from schemas.ats import ATSAnalyzeRequest, ATSCompareRequest, ATSPotentialRequest
 from services.ats import ats_evaluator
 from services.ats.ats_evaluator import ATSEvaluationError
@@ -16,7 +14,6 @@ from services.ats.potential_score_engine import predict_potential_score
 from services.ats.recommendation_engine import generate_recommendations
 
 router = APIRouter(prefix="/ats", tags=["ats"])
-limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/analyze", response_model=ATSEvaluationResult)

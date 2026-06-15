@@ -1,15 +1,12 @@
 from fastapi import APIRouter, HTTPException, Request, status
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
-from core.config import settings
+from core.config import limiter, settings
 from schemas.cover_letter import GenerateCoverLetterRequest, GenerateCoverLetterResponse
 from services.cover_letter_generator import cover_letter_generator
 from services.cover_letter_generator.generator import CoverLetterGenerationError
-from services.llm import GeminiAPIError
+from services.llm import LLMAPIError
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/cover-letter", response_model=GenerateCoverLetterResponse)
@@ -19,7 +16,7 @@ async def generate_cover_letter(
 ) -> GenerateCoverLetterResponse:
     try:
         return await cover_letter_generator.generate(body)
-    except GeminiAPIError as exc:
+    except LLMAPIError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI service is temporarily unavailable. Please try again.",

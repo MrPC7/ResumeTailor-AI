@@ -11,8 +11,8 @@ from schemas.cover_letter import (
 )
 from services.prompt_builder import PromptType, prompt_builder
 from services.llm import (
-    GeminiAPIError,
-    GeminiParseError,
+    LLMAPIError,
+    LLMParseError,
     LLMClient,
 )
 
@@ -47,9 +47,9 @@ class CoverLetterGenerator:
                     strengthsHighlighted=validated.strengthsHighlighted,
                     matchingSkillsUsed=validated.matchingSkillsUsed,
                 )
-            except GeminiAPIError:
+            except LLMAPIError:
                 raise
-            except (GeminiParseError, ValidationError) as exc:
+            except (LLMParseError, ValidationError) as exc:
                 last_error = exc
                 if attempt == self._max_retries:
                     break

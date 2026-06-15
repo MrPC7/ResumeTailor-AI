@@ -205,9 +205,17 @@ export function StepDownload() {
       {/* Navigation */}
       <div className="flex items-center justify-between gap-3">
         <Button variant="outline" size="sm" onClick={goPrev}>
-          ← Preview
+          ← Previous
         </Button>
-        <Button className="flex items-center gap-2" variant="ghost" onClick={reset}>
+        <Button
+          className="flex items-center gap-2"
+          variant="ghost"
+          onClick={() => {
+            if (window.confirm("Start over? This will clear all your progress.")) {
+              reset();
+            }
+          }}
+        >
           <RotateCcw className="h-4 w-4" />
           Start Over
         </Button>

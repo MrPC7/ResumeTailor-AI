@@ -133,14 +133,29 @@ export function StepATS() {
   if (phase === "error") {
     return (
       <Card>
-        <CardContent className="space-y-4 pt-6">
+        <CardHeader>
+          <CardTitle>ATS Analysis Failed</CardTitle>
+          <CardDescription>Something went wrong while evaluating your resume.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
             <p className="text-sm text-red-700">{error}</p>
           </div>
-          <Button variant="outline" onClick={goPrev}>
-            ← Previous
-          </Button>
+          <div className="flex items-center justify-between gap-3">
+            <Button variant="outline" size="sm" onClick={goPrev}>
+              ← Previous
+            </Button>
+            <Button
+              onClick={() => {
+                startedRef.current = false;
+                setError(null);
+                setPhase("loading");
+              }}
+            >
+              Retry Analysis
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );

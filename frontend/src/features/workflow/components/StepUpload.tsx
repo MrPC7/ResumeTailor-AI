@@ -194,22 +194,25 @@ export function StepUpload() {
           {/* Drop zone */}
           <div
             className={cn(
-              "cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors",
-              isDragActive
+              "rounded-lg border-2 border-dashed p-8 text-center transition-colors",
+              isPending
+                ? "cursor-not-allowed border-slate-200 bg-slate-50/50 opacity-60"
+                : "cursor-pointer",
+              !isPending && isDragActive
                 ? "border-slate-900 bg-slate-50"
-                : "border-slate-300 hover:border-slate-400 hover:bg-slate-50/50",
+                : !isPending && "border-slate-300 hover:border-slate-400 hover:bg-slate-50/50",
               freshUploadData && "border-emerald-400 bg-emerald-50",
             )}
             onClick={() => !isPending && inputRef.current?.click()}
             onDragOver={(e) => {
               e.preventDefault();
-              setIsDragActive(true);
+              if (!isPending) setIsDragActive(true);
             }}
             onDragLeave={() => setIsDragActive(false)}
             onDrop={(e) => {
               e.preventDefault();
               setIsDragActive(false);
-              applyFile(e.dataTransfer.files?.[0]);
+              if (!isPending) applyFile(e.dataTransfer.files?.[0]);
             }}
           >
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
