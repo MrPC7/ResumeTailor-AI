@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { CheckCircle2, FileText, Loader2, UploadCloud } from "lucide-react";
+import { CheckCircle2, FileText, Loader2, RefreshCw, UploadCloud } from "lucide-react";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -12,14 +12,11 @@ import {
   type UploadResumeFormValues,
   uploadResumeSchema,
 } from "@/features/resume-upload/schemas/upload-resume.schema";
+import { useWorkflowStore } from "@/features/workflow/store/workflow.store";
 import { extractResume } from "@/features/workflow/services/extract-resume.service";
 import { parseResume } from "@/features/workflow/services/parse-resume.service";
 import type { UploadStepData } from "@/features/workflow/types/workflow.types";
 import { cn } from "@/lib/utils";
-
-type Props = {
-  onComplete: (data: UploadStepData) => void;
-};
 
 type Phase = "idle" | "parsing" | "extracting" | "done";
 
@@ -53,11 +50,15 @@ const formatFileSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-export function StepUpload({ onComplete }: Props) {
+export function StepUpload() {
+  const storedUploadData = useWorkflowStore((s) => s.uploadData);
+  const completeUpload = useWorkflowStore((s) => s.completeUpload);
+
   const [isDragActive, setIsDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
-  const [uploadData, setUploadData] = useState<UploadStepData | null>(null);
+  const [freshUploadData, setFreshUploadData] = useState<UploadStepData | null>(null);
+  const [showUploader, setShowUploader] = useState(!storedUploadData);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const {
@@ -65,6 +66,7 @@ export function StepUpload({ onComplete }: Props) {
     setValue,
     clearErrors,
     setError,
+    reset: resetForm,
     formState: { errors },
   } = useForm<UploadResumeFormValues>({ resolver: zodResolver(uploadResumeSchema) });
 
@@ -80,7 +82,7 @@ export function StepUpload({ onComplete }: Props) {
     },
     onSuccess: (data) => {
       setPhase("done");
-      setUploadData(data);
+      setFreshUploadData(data);
     },
     onError: (error) => {
       setPhase("idle");
@@ -91,7 +93,7 @@ export function StepUpload({ onComplete }: Props) {
   const applyFile = (file: File | undefined) => {
     if (!file) return;
     setSelectedFile(file);
-    setUploadData(null);
+    setFreshUploadData(null);
     setPhase("idle");
     clearErrors("file");
     setValue("file", file, { shouldValidate: true, shouldTouch: true });
@@ -101,8 +103,66 @@ export function StepUpload({ onComplete }: Props) {
     mutation.mutate(data.file);
   };
 
+  const handleContinueWithStored = () => {
+    if (storedUploadData) completeUpload(storedUploadData);
+  };
+
+  const handleContinueWithFresh = () => {
+    if (freshUploadData) completeUpload(freshUploadData);
+  };
+
+  const handleUploadDifferent = () => {
+    setShowUploader(true);
+    setFreshUploadData(null);
+    setSelectedFile(null);
+    setPhase("idle");
+    resetForm();
+  };
+
   const isPending = phase === "parsing" || phase === "extracting";
 
+  // ── Cached resume: show summary with option to re-upload ──────────────
+  if (storedUploadData && !showUploader) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Resume Uploaded</CardTitle>
+          <CardDescription>Your resume has already been parsed and is ready to use.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-4">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-emerald-900">
+                {storedUploadData.resume.name ?? "Resume"} — parsed successfully
+              </p>
+              <p className="text-xs text-emerald-700">
+                {storedUploadData.resume.skills.length} skills ·{" "}
+                {storedUploadData.resume.experience.length} positions ·{" "}
+                {storedUploadData.resume.education.length} degrees
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button className="flex-1" onClick={handleContinueWithStored}>
+              Continue with this resume →
+            </Button>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={handleUploadDifferent}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Upload a different resume
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // ── Upload form ────────────────────────────────────────────────────────
   return (
     <Card>
       <CardHeader>
@@ -118,7 +178,7 @@ export function StepUpload({ onComplete }: Props) {
               isDragActive
                 ? "border-slate-900 bg-slate-50"
                 : "border-slate-300 hover:border-slate-400 hover:bg-slate-50/50",
-              uploadData && "border-emerald-400 bg-emerald-50"
+              freshUploadData && "border-emerald-400 bg-emerald-50",
             )}
             onClick={() => !isPending && inputRef.current?.click()}
             onDragOver={(e) => {
@@ -169,38 +229,51 @@ export function StepUpload({ onComplete }: Props) {
           )}
 
           {/* Success state */}
-          {uploadData && (
+          {freshUploadData && (
             <div className="flex items-start gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-3">
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
               <div className="space-y-0.5">
                 <p className="text-sm font-medium text-emerald-900">
-                  {uploadData.resume.name ?? "Resume"} parsed successfully
+                  {freshUploadData.resume.name ?? "Resume"} parsed successfully
                 </p>
                 <p className="text-xs text-emerald-700">
-                  {uploadData.resume.skills.length} skills · {uploadData.resume.experience.length}{" "}
-                  positions · {uploadData.resume.education.length} degrees
+                  {freshUploadData.resume.skills.length} skills ·{" "}
+                  {freshUploadData.resume.experience.length} positions ·{" "}
+                  {freshUploadData.resume.education.length} degrees
                 </p>
               </div>
             </div>
           )}
 
           {/* Actions */}
-          {!uploadData ? (
-            <Button className="w-full" disabled={isPending || !selectedFile} type="submit">
-              {isPending ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {PHASE_LABEL[phase]}
-                </span>
-              ) : (
-                "Upload & Parse Resume"
-              )}
-            </Button>
-          ) : (
-            <Button className="w-full" onClick={() => onComplete(uploadData)} type="button">
-              Continue to Job Description →
-            </Button>
-          )}
+          <div className="flex flex-col gap-2">
+            {!freshUploadData ? (
+              <Button className="w-full" disabled={isPending || !selectedFile} type="submit">
+                {isPending ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {PHASE_LABEL[phase]}
+                  </span>
+                ) : (
+                  "Upload & Parse Resume"
+                )}
+              </Button>
+            ) : (
+              <Button className="w-full" onClick={handleContinueWithFresh} type="button">
+                Continue to Job Description →
+              </Button>
+            )}
+            {storedUploadData && (
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() => setShowUploader(false)}
+              >
+                ← Back to saved resume
+              </Button>
+            )}
+          </div>
         </form>
       </CardContent>
     </Card>

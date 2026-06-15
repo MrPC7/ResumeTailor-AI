@@ -11,15 +11,14 @@ import {
   exportResume,
   type ExportFormat,
 } from "@/features/workflow/services/export-resume.service";
-import type { OptimizeResult } from "@/features/workflow/types/workflow.types";
+import { useWorkflowStore } from "@/features/workflow/store/workflow.store";
 import { pushToast } from "@/lib/toast";
 
-type Props = {
-  optimizeResult: OptimizeResult;
-  onReset: () => void;
-};
+export function StepDownload() {
+  const optimizeResult = useWorkflowStore((s) => s.optimizeResult!);
+  const goPrev = useWorkflowStore((s) => s.goPrev);
+  const reset = useWorkflowStore((s) => s.reset);
 
-export function StepDownload({ optimizeResult, onReset }: Props) {
   const { customizedResume, atsComparison } = optimizeResult;
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState<ExportFormat | null>(null);
@@ -106,11 +105,16 @@ export function StepDownload({ optimizeResult, onReset }: Props) {
         </CardContent>
       </Card>
 
-      {/* Reset */}
-      <Button className="w-full" variant="ghost" onClick={onReset}>
-        <RotateCcw className="mr-2 h-4 w-4" />
-        Start Over with a Different Resume
-      </Button>
+      {/* Navigation */}
+      <div className="flex items-center justify-between gap-3">
+        <Button variant="outline" size="sm" onClick={goPrev}>
+          ← Preview
+        </Button>
+        <Button className="flex items-center gap-2" variant="ghost" onClick={reset}>
+          <RotateCcw className="h-4 w-4" />
+          Start Over
+        </Button>
+      </div>
     </div>
   );
 }

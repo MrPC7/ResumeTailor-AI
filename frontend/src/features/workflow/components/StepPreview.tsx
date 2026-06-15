@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ResumeView } from "@/components/resume/ResumeView";
 import { ResumeDiff } from "@/components/resume/ResumeDiff";
-import type { OptimizeResult, StructuredResume } from "@/features/workflow/types/workflow.types";
+import { useWorkflowStore } from "@/features/workflow/store/workflow.store";
 
 // ── Tab types ─────────────────────────────────────────────────────────────
 
@@ -53,14 +53,12 @@ function ScorePill({
 
 // ── Main component ────────────────────────────────────────────────────────
 
-type Props = {
-  originalResume: StructuredResume;
-  optimizeResult: OptimizeResult;
-  onComplete: () => void;
-  onReset: () => void;
-};
+export function StepPreview() {
+  const originalResume = useWorkflowStore((s) => s.uploadData!.resume);
+  const optimizeResult = useWorkflowStore((s) => s.optimizeResult!);
+  const completePreview = useWorkflowStore((s) => s.completePreview);
+  const goPrev = useWorkflowStore((s) => s.goPrev);
 
-export function StepPreview({ originalResume, optimizeResult, onComplete, onReset }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>("customized");
   const { customizedResume, atsComparison } = optimizeResult;
   const delta = atsComparison.afterScore - atsComparison.beforeScore;
@@ -148,10 +146,10 @@ export function StepPreview({ originalResume, optimizeResult, onComplete, onRese
 
       {/* ── Actions ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-        <Button variant="ghost" size="sm" onClick={onReset}>
-          ← Start Over
+        <Button variant="outline" size="sm" onClick={goPrev}>
+          ← Previous
         </Button>
-        <Button onClick={onComplete} className="gap-2">
+        <Button onClick={completePreview} className="gap-2">
           <Download className="h-4 w-4" />
           Proceed to Download
         </Button>

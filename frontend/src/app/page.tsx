@@ -1,15 +1,16 @@
 "use client";
 
+import { StepATS } from "@/features/workflow/components/StepATS";
 import { StepDownload } from "@/features/workflow/components/StepDownload";
 import { StepJD } from "@/features/workflow/components/StepJD";
-import { StepOptimize } from "@/features/workflow/components/StepOptimize";
 import { StepPreview } from "@/features/workflow/components/StepPreview";
+import { StepRecommendations } from "@/features/workflow/components/StepRecommendations";
 import { StepUpload } from "@/features/workflow/components/StepUpload";
 import { WorkflowStepper } from "@/features/workflow/components/WorkflowStepper";
-import { useWorkflow } from "@/features/workflow/hooks/use-workflow";
+import { useWorkflowStore } from "@/features/workflow/store/workflow.store";
 
 export default function Home() {
-  const workflow = useWorkflow();
+  const currentStep = useWorkflowStore((s) => s.currentStep);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -22,41 +23,17 @@ export default function Home() {
           </p>
         </header>
 
-        {/* Step indicator */}
-        <WorkflowStepper currentStep={workflow.step} />
+        {/* Stepper — self-contained, reads from store */}
+        <WorkflowStepper />
 
         {/* Step content */}
         <div className="mt-8">
-          {workflow.step === "upload" && <StepUpload onComplete={workflow.completeUpload} />}
-
-          {workflow.step === "jd" && workflow.uploadData && (
-            <StepJD resume={workflow.uploadData.resume} onComplete={workflow.completeJD} />
-          )}
-
-          {workflow.step === "optimize" && workflow.uploadData && workflow.jdData && (
-            <StepOptimize
-              resume={workflow.uploadData.resume}
-              analyzedJD={workflow.jdData.analyzedJD}
-              onComplete={workflow.completeOptimize}
-              onReset={workflow.reset}
-            />
-          )}
-
-          {workflow.step === "preview" && workflow.uploadData && workflow.optimizeResult && (
-            <StepPreview
-              originalResume={workflow.uploadData.resume}
-              optimizeResult={workflow.optimizeResult}
-              onComplete={workflow.completePreview}
-              onReset={workflow.reset}
-            />
-          )}
-
-          {workflow.step === "download" && workflow.optimizeResult && (
-            <StepDownload
-              optimizeResult={workflow.optimizeResult}
-              onReset={workflow.reset}
-            />
-          )}
+          {currentStep === "upload" && <StepUpload />}
+          {currentStep === "jd" && <StepJD />}
+          {currentStep === "ats" && <StepATS />}
+          {currentStep === "recommendations" && <StepRecommendations />}
+          {currentStep === "preview" && <StepPreview />}
+          {currentStep === "download" && <StepDownload />}
         </div>
       </div>
     </main>

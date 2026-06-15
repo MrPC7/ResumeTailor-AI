@@ -1,4 +1,4 @@
-export type WorkflowStep = "upload" | "jd" | "optimize" | "preview" | "download";
+export type WorkflowStep = "upload" | "jd" | "ats" | "recommendations" | "preview" | "download";
 
 export type ExperienceItem = {
   company: string;
@@ -101,6 +101,13 @@ export type RecommendationGroup = {
 export type RecommendationReport = {
   totalEstimatedGain: number;
   groups: RecommendationGroup[];
+};
+
+export type ATSStepData = {
+  atsResult: ATSEvaluationResult;
+  potentialScore: PotentialScoreResult | null;
+  recReport: RecommendationReport | null;
+  selectedRecommendations: Record<string, boolean>;
 };
 
 export type OptimizeResult = {

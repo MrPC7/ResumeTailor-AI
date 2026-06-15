@@ -1,49 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import type {
-  JDStepData,
-  OptimizeResult,
-  UploadStepData,
-  WorkflowStep,
-} from "@/features/workflow/types/workflow.types";
-
-type WorkflowState = {
-  step: WorkflowStep;
-  uploadData: UploadStepData | null;
-  jdData: JDStepData | null;
-  optimizeResult: OptimizeResult | null;
-};
-
-const INITIAL: WorkflowState = {
-  step: "upload",
-  uploadData: null,
-  jdData: null,
-  optimizeResult: null,
-};
-
-export function useWorkflow() {
-  const [state, setState] = useState<WorkflowState>(INITIAL);
-
-  const completeUpload = useCallback((data: UploadStepData) => {
-    setState((prev) => ({ ...prev, step: "jd", uploadData: data }));
-  }, []);
-
-  const completeJD = useCallback((data: JDStepData) => {
-    setState((prev) => ({ ...prev, step: "optimize", jdData: data }));
-  }, []);
-
-  const completeOptimize = useCallback((result: OptimizeResult) => {
-    setState((prev) => ({ ...prev, step: "preview", optimizeResult: result }));
-  }, []);
-
-  const completePreview = useCallback(() => {
-    setState((prev) => ({ ...prev, step: "download" }));
-  }, []);
-
-  const reset = useCallback(() => {
-    setState(INITIAL);
-  }, []);
-
-  return { ...state, completeUpload, completeJD, completeOptimize, completePreview, reset };
-}
+/**
+ * Thin re-export facade kept for backward compatibility.
+ * New code should import directly from the Zustand store:
+ *   import { useWorkflowStore } from "@/features/workflow/store/workflow.store"
+ */
+export { useWorkflowStore as useWorkflow } from "@/features/workflow/store/workflow.store";
