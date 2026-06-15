@@ -34,12 +34,7 @@ function DimensionRow({ label, before, after }: DimensionRowProps) {
   const delta = after - before;
   const barColor = (v: number) =>
     v >= 80 ? "bg-emerald-500" : v >= 60 ? "bg-amber-500" : "bg-red-500";
-  const deltaColor =
-    delta > 0
-      ? "text-emerald-600"
-      : delta < 0
-        ? "text-red-600"
-        : "text-slate-400";
+  const deltaColor = delta > 0 ? "text-emerald-600" : delta < 0 ? "text-red-600" : "text-slate-400";
 
   return (
     <div className="space-y-1.5">
@@ -48,13 +43,16 @@ function DimensionRow({ label, before, after }: DimensionRowProps) {
         <div className="flex items-center gap-2">
           <span className="text-xs tabular-nums text-slate-500">{before}</span>
           <ArrowRight className="h-3 w-3 text-slate-300" />
-          <span className="text-xs tabular-nums font-semibold text-slate-700">{after}</span>
-          <span className={cn("text-xs font-bold tabular-nums min-w-[36px] text-right", deltaColor)}>
-            {delta > 0 ? "+" : ""}{delta}
+          <span className="text-xs font-semibold tabular-nums text-slate-700">{after}</span>
+          <span
+            className={cn("min-w-[36px] text-right text-xs font-bold tabular-nums", deltaColor)}
+          >
+            {delta > 0 ? "+" : ""}
+            {delta}
           </span>
         </div>
       </div>
-      <div className="flex gap-1 h-2">
+      <div className="flex h-2 gap-1">
         <div className="flex-1 overflow-hidden rounded-full bg-slate-100">
           <div
             className={cn("h-full rounded-full transition-all duration-500", barColor(before))}
@@ -86,7 +84,7 @@ export function ATSComparisonCard({ comparison }: Props) {
   ];
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
+    <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-700">Before vs After Optimization</h3>
@@ -123,8 +121,9 @@ export function ATSComparisonCard({ comparison }: Props) {
       </div>
 
       {isPositive && (
-        <p className="text-center text-xs text-emerald-600 font-medium">
-          Resume optimized — ATS score improved by {improvement} point{improvement !== 1 ? "s" : ""}!
+        <p className="text-center text-xs font-medium text-emerald-600">
+          Resume optimized — ATS score improved by {improvement} point{improvement !== 1 ? "s" : ""}
+          !
         </p>
       )}
       {isNeutral && (
@@ -140,7 +139,7 @@ export function ATSComparisonCard({ comparison }: Props) {
 
       {/* Per-dimension breakdown */}
       <div className="space-y-1 pt-1">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-center justify-between">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             Dimension Breakdown
           </h4>

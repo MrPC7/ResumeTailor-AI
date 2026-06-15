@@ -21,7 +21,7 @@ export function ImpactBadge({ level, className }: Props) {
       className={cn(
         "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase leading-none",
         STYLES[level],
-        className,
+        className
       )}
     >
       {level}

@@ -20,14 +20,14 @@ function isDifferent(a: string | null | undefined, b: string | null | undefined)
 // Find experience items that changed, keyed by company+position
 function diffExperience(
   before: ExperienceItem[],
-  after: ExperienceItem[],
+  after: ExperienceItem[]
 ): Array<{ before: ExperienceItem; after: ExperienceItem }> {
   const changes: Array<{ before: ExperienceItem; after: ExperienceItem }> = [];
   for (const afterItem of after) {
     const beforeItem = before.find(
       (b) =>
         b.company?.toLowerCase() === afterItem.company?.toLowerCase() &&
-        b.position?.toLowerCase() === afterItem.position?.toLowerCase(),
+        b.position?.toLowerCase() === afterItem.position?.toLowerCase()
     );
     if (beforeItem && isDifferent(beforeItem.description, afterItem.description)) {
       changes.push({ before: beforeItem, after: afterItem });
@@ -39,13 +39,11 @@ function diffExperience(
 // Find project items that changed, keyed by name
 function diffProjects(
   before: ProjectItem[],
-  after: ProjectItem[],
+  after: ProjectItem[]
 ): Array<{ before: ProjectItem; after: ProjectItem }> {
   const changes: Array<{ before: ProjectItem; after: ProjectItem }> = [];
   for (const afterItem of after) {
-    const beforeItem = before.find(
-      (b) => b.name?.toLowerCase() === afterItem.name?.toLowerCase(),
-    );
+    const beforeItem = before.find((b) => b.name?.toLowerCase() === afterItem.name?.toLowerCase());
     if (beforeItem && isDifferent(beforeItem.description, afterItem.description)) {
       changes.push({ before: beforeItem, after: afterItem });
     }
@@ -57,7 +55,7 @@ function diffProjects(
 
 function DiffSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
       <div className="border-b border-slate-100 bg-slate-50 px-5 py-3">
         <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
       </div>
@@ -85,13 +83,13 @@ function BeforeAfterBlock({
           <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-red-400">
             Before
           </p>
-          <p className="text-sm leading-relaxed text-slate-600 whitespace-pre-line">{before}</p>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600">{before}</p>
         </div>
         <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
           <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-emerald-500">
             After
           </p>
-          <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">{after}</p>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700">{after}</p>
         </div>
       </div>
     </div>
@@ -195,10 +193,7 @@ export function ResumeDiff({ original, customized }: Props) {
       {/* ── Summary ─────────────────────────────────────────────── */}
       {summaryChanged && (
         <DiffSection title="Summary">
-          <BeforeAfterBlock
-            before={original.summary ?? ""}
-            after={customized.summary ?? ""}
-          />
+          <BeforeAfterBlock before={original.summary ?? ""} after={customized.summary ?? ""} />
         </DiffSection>
       )}
 
@@ -214,10 +209,7 @@ export function ResumeDiff({ original, customized }: Props) {
                     <span className="font-normal text-slate-500"> · {after.company}</span>
                   ) : null}
                 </p>
-                <BeforeAfterBlock
-                  before={before.description}
-                  after={after.description}
-                />
+                <BeforeAfterBlock before={before.description} after={after.description} />
                 {i < experienceChanges.length - 1 && (
                   <div className="mt-5 border-b border-slate-100" />
                 )}
@@ -234,10 +226,7 @@ export function ResumeDiff({ original, customized }: Props) {
             {projectChanges.map(({ before, after }, i) => (
               <div key={i}>
                 <p className="mb-2 text-sm font-semibold text-slate-800">{after.name}</p>
-                <BeforeAfterBlock
-                  before={before.description}
-                  after={after.description}
-                />
+                <BeforeAfterBlock before={before.description} after={after.description} />
                 {i < projectChanges.length - 1 && (
                   <div className="mt-5 border-b border-slate-100" />
                 )}

@@ -28,16 +28,12 @@ function ExperienceEntry({ item }: { item: ExperienceItem }) {
       <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
         <div>
           <span className="font-semibold text-slate-900">{item.position}</span>
-          {item.company && (
-            <span className="text-slate-600"> · {item.company}</span>
-          )}
+          {item.company && <span className="text-slate-600"> · {item.company}</span>}
         </div>
-        {item.duration && (
-          <span className="shrink-0 text-xs text-slate-400">{item.duration}</span>
-        )}
+        {item.duration && <span className="shrink-0 text-xs text-slate-400">{item.duration}</span>}
       </div>
       {item.description && (
-        <p className="mt-1.5 text-sm leading-relaxed text-slate-600 whitespace-pre-line">
+        <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-slate-600">
           {item.description}
         </p>
       )}
@@ -51,13 +47,9 @@ function EducationEntry({ item }: { item: EducationItem }) {
       <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
         <div>
           <span className="font-semibold text-slate-900">{item.degree}</span>
-          {item.institution && (
-            <span className="text-slate-600"> · {item.institution}</span>
-          )}
+          {item.institution && <span className="text-slate-600"> · {item.institution}</span>}
         </div>
-        {item.year && (
-          <span className="shrink-0 text-xs text-slate-400">{item.year}</span>
-        )}
+        {item.year && <span className="shrink-0 text-xs text-slate-400">{item.year}</span>}
       </div>
     </div>
   );
@@ -69,13 +61,11 @@ function ProjectEntry({ item }: { item: ProjectItem }) {
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="font-semibold text-slate-900">{item.name}</span>
         {item.technologies.length > 0 && (
-          <span className="text-xs text-slate-400">
-            {item.technologies.join(" · ")}
-          </span>
+          <span className="text-xs text-slate-400">{item.technologies.join(" · ")}</span>
         )}
       </div>
       {item.description && (
-        <p className="mt-1.5 text-sm leading-relaxed text-slate-600 whitespace-pre-line">
+        <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-slate-600">
           {item.description}
         </p>
       )}
@@ -89,9 +79,7 @@ export function ResumeView({ resume }: Props) {
       {/* ── Header ──────────────────────────────────────────────── */}
       <header className="space-y-1 text-center">
         {resume.name && (
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            {resume.name}
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{resume.name}</h1>
         )}
         {(resume.email || resume.phone) && (
           <p className="text-sm text-slate-500">

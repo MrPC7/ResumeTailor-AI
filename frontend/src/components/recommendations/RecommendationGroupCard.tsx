@@ -25,16 +25,16 @@ export function RecommendationGroupCard({
   onToggleGroupSelection,
   searchQuery = "",
 }: Props) {
-  const { groupId, groupTitle, recommendations } = group;
+  const { groupTitle, recommendations } = group;
 
   const selectedCount = useMemo(
     () => recommendations.filter((r) => selectedIds[r.id]).length,
-    [recommendations, selectedIds],
+    [recommendations, selectedIds]
   );
 
   const groupPoints = useMemo(
     () => recommendations.reduce((sum, r) => sum + r.estimatedPoints, 0),
-    [recommendations],
+    [recommendations]
   );
 
   const selectedPoints = useMemo(
@@ -42,7 +42,7 @@ export function RecommendationGroupCard({
       recommendations
         .filter((r) => selectedIds[r.id])
         .reduce((sum, r) => sum + r.estimatedPoints, 0),
-    [recommendations, selectedIds],
+    [recommendations, selectedIds]
   );
 
   const allSelected = selectedCount === recommendations.length;
@@ -56,16 +56,16 @@ export function RecommendationGroupCard({
       (r) =>
         r.title.toLowerCase().includes(q) ||
         r.description.toLowerCase().includes(q) ||
-        r.impactLevel.includes(q),
+        r.impactLevel.includes(q)
     );
   }, [recommendations, searchQuery]);
 
   if (searchQuery && visibleRecs.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       {/* Group header */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-slate-50/60 border-b border-slate-100">
+      <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
         {/* Group checkbox */}
         <button
           type="button"
@@ -75,7 +75,7 @@ export function RecommendationGroupCard({
               ? "border-emerald-600 bg-emerald-600 text-white"
               : someSelected
                 ? "border-emerald-400 bg-emerald-100 text-emerald-600"
-                : "border-slate-300 bg-white hover:border-slate-400",
+                : "border-slate-300 bg-white hover:border-slate-400"
           )}
           onClick={(e) => {
             e.stopPropagation();
@@ -99,7 +99,7 @@ export function RecommendationGroupCard({
             <ChevronDown className="h-4 w-4 text-slate-400" />
           )}
           <span className="text-sm font-semibold text-slate-800">{groupTitle}</span>
-          <span className="text-xs text-slate-400 tabular-nums">
+          <span className="text-xs tabular-nums text-slate-400">
             {selectedCount}/{recommendations.length}
           </span>
         </button>

@@ -45,7 +45,7 @@ export function ToastCenter() {
             "pointer-events-auto rounded-lg border px-3 py-2 text-sm shadow-md backdrop-blur",
             toast.type === "error" && "border-red-200 bg-red-50 text-red-700",
             toast.type === "success" && "border-emerald-200 bg-emerald-50 text-emerald-700",
-            toast.type === "info" && "border-blue-200 bg-blue-50 text-blue-700",
+            toast.type === "info" && "border-blue-200 bg-blue-50 text-blue-700"
           )}
         >
           <div className="flex items-start gap-2">

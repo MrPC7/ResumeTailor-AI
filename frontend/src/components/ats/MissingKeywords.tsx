@@ -8,11 +8,7 @@ type Props = {
 
 export function MissingKeywords({ keywords }: Props) {
   if (keywords.length === 0) {
-    return (
-      <p className="text-sm text-slate-400 italic">
-        Great — no missing keywords detected!
-      </p>
-    );
+    return <p className="text-sm italic text-slate-400">Great — no missing keywords detected!</p>;
   }
 
   return (

@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Check,
-  ClipboardCopy,
-  Download,
-  FileText,
-  RotateCcw,
-  Search,
-} from "lucide-react";
+import { Check, ClipboardCopy, Download, FileText, RotateCcw, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
@@ -89,17 +82,13 @@ export function StepDownload() {
               "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
               activeTab === tab.id
                 ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700",
+                : "text-slate-500 hover:text-slate-700"
             )}
           >
             {tab.icon}
             <span className="hidden sm:inline">{tab.label}</span>
             <span className="sm:hidden">
-              {tab.id === "resume"
-                ? "Resume"
-                : tab.id === "ats"
-                  ? "ATS"
-                  : "Cover Letter"}
+              {tab.id === "resume" ? "Resume" : tab.id === "ats" ? "ATS" : "Cover Letter"}
             </span>
           </button>
         ))}
@@ -114,9 +103,7 @@ export function StepDownload() {
               <CardTitle className="text-base">Download Your Optimized Resume</CardTitle>
               <CardDescription>
                 Your resume for{" "}
-                <span className="font-medium text-slate-900">
-                  {customizedResume.name ?? "you"}
-                </span>{" "}
+                <span className="font-medium text-slate-900">{customizedResume.name ?? "you"}</span>{" "}
                 is ready to download.
               </CardDescription>
             </CardHeader>

@@ -30,7 +30,13 @@ function scoreLabel(score: number): string {
   return "Needs Work";
 }
 
-export function ATSScoreCard({ score, size = 160, strokeWidth = 12, label, animate = true }: Props) {
+export function ATSScoreCard({
+  score,
+  size = 160,
+  strokeWidth = 12,
+  label,
+  animate = true,
+}: Props) {
   const [displayed, setDisplayed] = useState(animate ? 0 : score);
   const rafRef = useRef<number | null>(null);
 
@@ -69,7 +75,10 @@ export function ATSScoreCard({ score, size = 160, strokeWidth = 12, label, anima
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <div
+        className="relative flex items-center justify-center"
+        style={{ width: size, height: size }}
+      >
         <svg
           className="-rotate-90"
           width={size}
@@ -101,8 +110,10 @@ export function ATSScoreCard({ score, size = 160, strokeWidth = 12, label, anima
           />
         </svg>
         <div className="absolute flex flex-col items-center">
-          <span className={cn("font-bold tabular-nums leading-none", scoreTextColor(score))}
-            style={{ fontSize: size * 0.22 }}>
+          <span
+            className={cn("font-bold tabular-nums leading-none", scoreTextColor(score))}
+            style={{ fontSize: size * 0.22 }}
+          >
             {displayed}
           </span>
           <span className="text-xs text-slate-400">/ 100</span>

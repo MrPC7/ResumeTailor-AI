@@ -69,7 +69,7 @@ const RecommendationReportSchema = z.object({
 
 export async function analyzeATS(
   resume: StructuredResume,
-  jobDescription: AnalyzedJD,
+  jobDescription: AnalyzedJD
 ): Promise<ATSEvaluationResult> {
   const raw = await jsonPost<unknown>("/api/ats/analyze", { resume, jobDescription });
   return ATSEvaluationResultSchema.parse(raw);
@@ -78,7 +78,7 @@ export async function analyzeATS(
 export async function predictPotentialScore(
   evaluation: ATSEvaluationResult,
   resume: StructuredResume,
-  jobDescription: AnalyzedJD,
+  jobDescription: AnalyzedJD
 ): Promise<PotentialScoreResult> {
   const raw = await jsonPost<unknown>("/api/ats/potential", {
     evaluation,
@@ -91,7 +91,7 @@ export async function predictPotentialScore(
 export async function compareATS(
   originalResume: StructuredResume,
   customizedResume: StructuredResume,
-  jobDescription: AnalyzedJD,
+  jobDescription: AnalyzedJD
 ): Promise<ATSComparisonResult> {
   const raw = await jsonPost<unknown>("/api/ats/compare", {
     originalResume,
@@ -104,7 +104,7 @@ export async function compareATS(
 export async function fetchRecommendations(
   evaluation: ATSEvaluationResult,
   resume: StructuredResume,
-  jobDescription: AnalyzedJD,
+  jobDescription: AnalyzedJD
 ): Promise<RecommendationReport> {
   const raw = await jsonPost<unknown>("/api/ats/recommendations", {
     evaluation,

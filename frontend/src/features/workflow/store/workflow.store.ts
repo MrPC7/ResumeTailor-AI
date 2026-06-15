@@ -86,10 +86,7 @@ function prevStep(current: WorkflowStep): WorkflowStep {
  * Returns `completedSteps` with `completing` added and all its downstream
  * dependents removed.
  */
-function advanceCompleted(
-  current: WorkflowStep[],
-  completing: WorkflowStep,
-): WorkflowStep[] {
+function advanceCompleted(current: WorkflowStep[], completing: WorkflowStep): WorkflowStep[] {
   const downstream = DOWNSTREAM[completing];
   const withoutDownstream = current.filter((s) => !downstream.includes(s));
   return withoutDownstream.includes(completing)

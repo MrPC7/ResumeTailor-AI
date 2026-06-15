@@ -29,13 +29,13 @@ export function RecommendationPanel({
   // ── Derived counts ────────────────────────────────────────────────
   const allRecIds = useMemo(
     () => report.groups.flatMap((g) => g.recommendations.map((r) => r.id)),
-    [report],
+    [report]
   );
 
   const totalCount = allRecIds.length;
   const selectedCount = useMemo(
     () => allRecIds.filter((id) => selectedIds[id]).length,
-    [allRecIds, selectedIds],
+    [allRecIds, selectedIds]
   );
 
   const selectedGain = useMemo(
@@ -44,7 +44,7 @@ export function RecommendationPanel({
         .flatMap((g) => g.recommendations)
         .filter((r) => selectedIds[r.id])
         .reduce((sum, r) => sum + r.estimatedPoints, 0),
-    [report, selectedIds],
+    [report, selectedIds]
   );
 
   // ── Handlers ──────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ export function RecommendationPanel({
     (id: string) => {
       onSelectionChange({ ...selectedIds, [id]: !selectedIds[id] });
     },
-    [selectedIds, onSelectionChange],
+    [selectedIds, onSelectionChange]
   );
 
   const handleSelectAll = useCallback(() => {
@@ -77,7 +77,7 @@ export function RecommendationPanel({
       for (const id of ids) next[id] = !allGroupSelected;
       onSelectionChange(next);
     },
-    [report, selectedIds, onSelectionChange],
+    [report, selectedIds, onSelectionChange]
   );
 
   const handleToggleCollapse = useCallback((groupId: string) => {
@@ -136,10 +136,10 @@ export function RecommendationPanel({
             g.recommendations.every(
               (r) =>
                 !r.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-                !r.description.toLowerCase().includes(searchQuery.toLowerCase()),
-            ),
+                !r.description.toLowerCase().includes(searchQuery.toLowerCase())
+            )
           ) && (
-            <p className="text-center text-sm text-slate-400 py-4">
+            <p className="py-4 text-center text-sm text-slate-400">
               No recommendations match &ldquo;{searchQuery}&rdquo;
             </p>
           )}

@@ -147,7 +147,9 @@ export function StepUpload() {
       <Card>
         <CardHeader>
           <CardTitle>Resume Uploaded</CardTitle>
-          <CardDescription>Your resume has already been parsed and is ready to use.</CardDescription>
+          <CardDescription>
+            Your resume has already been parsed and is ready to use.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-start gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-4">
@@ -201,7 +203,7 @@ export function StepUpload() {
               !isPending && isDragActive
                 ? "border-slate-900 bg-slate-50"
                 : !isPending && "border-slate-300 hover:border-slate-400 hover:bg-slate-50/50",
-              freshUploadData && "border-emerald-400 bg-emerald-50",
+              freshUploadData && "border-emerald-400 bg-emerald-50"
             )}
             onClick={() => !isPending && inputRef.current?.click()}
             onDragOver={(e) => {

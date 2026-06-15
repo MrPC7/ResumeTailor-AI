@@ -28,37 +28,41 @@ export function ATSGainSummary({ currentScore, potentialScore, selectedGain }: P
     <div className="grid grid-cols-3 gap-3">
       {/* Current Score */}
       <div className="rounded-xl border border-slate-200 bg-white p-4 text-center">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 mb-1">
+        <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
           Current
         </p>
         <p className={cn("text-3xl font-extrabold tabular-nums", scoreColor(currentScore))}>
           {currentScore}
         </p>
-        <div className="mt-2 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
-            className={cn("h-full rounded-full transition-all duration-300", progressColor(currentScore))}
+            className={cn(
+              "h-full rounded-full transition-all duration-300",
+              progressColor(currentScore)
+            )}
             style={{ width: `${currentScore}%` }}
           />
         </div>
       </div>
 
       {/* Projected (selected gain) */}
-      <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-b from-blue-50 to-white p-4 text-center relative">
-        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-0.5">
+      <div className="relative rounded-xl border-2 border-blue-200 bg-gradient-to-b from-blue-50 to-white p-4 text-center">
+        <div className="absolute -top-2.5 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-blue-600 px-2.5 py-0.5">
           <Zap className="h-3 w-3 text-white" />
-          <span className="text-[10px] font-bold text-white">
-            +{selectedGain} pts
-          </span>
+          <span className="text-[10px] font-bold text-white">+{selectedGain} pts</span>
         </div>
-        <p className="text-[11px] font-medium uppercase tracking-wide text-blue-500 mb-1 mt-1">
+        <p className="mb-1 mt-1 text-[11px] font-medium uppercase tracking-wide text-blue-500">
           Projected
         </p>
         <p className={cn("text-3xl font-extrabold tabular-nums", scoreColor(projectedScore))}>
           {projectedScore}
         </p>
-        <div className="mt-2 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
-            className={cn("h-full rounded-full transition-all duration-500", progressColor(projectedScore))}
+            className={cn(
+              "h-full rounded-full transition-all duration-500",
+              progressColor(projectedScore)
+            )}
             style={{ width: `${projectedScore}%` }}
           />
         </div>
@@ -66,15 +70,18 @@ export function ATSGainSummary({ currentScore, potentialScore, selectedGain }: P
 
       {/* Potential (ceiling) */}
       <div className="rounded-xl border border-slate-200 bg-white p-4 text-center">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 mb-1">
+        <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
           Potential
         </p>
         <p className={cn("text-3xl font-extrabold tabular-nums", scoreColor(potentialScore))}>
           {potentialScore}
         </p>
-        <div className="mt-2 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
-            className={cn("h-full rounded-full transition-all duration-300", progressColor(potentialScore))}
+            className={cn(
+              "h-full rounded-full transition-all duration-300",
+              progressColor(potentialScore)
+            )}
             style={{ width: `${potentialScore}%` }}
           />
         </div>

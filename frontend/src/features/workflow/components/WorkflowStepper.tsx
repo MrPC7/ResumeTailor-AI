@@ -13,12 +13,27 @@ type StepMeta = {
 };
 
 const STEPS: StepMeta[] = [
-  { id: "upload", label: "Upload Resume", shortLabel: "Upload", icon: <Upload className="h-4 w-4" /> },
+  {
+    id: "upload",
+    label: "Upload Resume",
+    shortLabel: "Upload",
+    icon: <Upload className="h-4 w-4" />,
+  },
   { id: "jd", label: "Job Description", shortLabel: "Job", icon: <FileText className="h-4 w-4" /> },
   { id: "ats", label: "ATS Analysis", shortLabel: "ATS", icon: <Search className="h-4 w-4" /> },
-  { id: "recommendations", label: "Recommendations", shortLabel: "Recs", icon: <Settings className="h-4 w-4" /> },
+  {
+    id: "recommendations",
+    label: "Recommendations",
+    shortLabel: "Recs",
+    icon: <Settings className="h-4 w-4" />,
+  },
   { id: "preview", label: "Preview", shortLabel: "Preview", icon: <Eye className="h-4 w-4" /> },
-  { id: "download", label: "Download", shortLabel: "Download", icon: <Download className="h-4 w-4" /> },
+  {
+    id: "download",
+    label: "Download",
+    shortLabel: "Download",
+    icon: <Download className="h-4 w-4" />,
+  },
 ];
 
 export function WorkflowStepper() {
@@ -58,10 +73,14 @@ export function WorkflowStepper() {
                           "border-emerald-600 bg-emerald-600 text-white shadow-sm shadow-emerald-200",
                         isActive &&
                           "border-slate-900 bg-slate-900 text-white shadow-sm shadow-slate-300",
-                        !completed && !isActive && reachable &&
+                        !completed &&
+                          !isActive &&
+                          reachable &&
                           "cursor-pointer border-slate-400 bg-slate-50 text-slate-600 hover:border-slate-600",
-                        !completed && !isActive && !reachable &&
-                          "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300",
+                        !completed &&
+                          !isActive &&
+                          !reachable &&
+                          "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-300"
                       )}
                     >
                       {completed && !isActive ? <Check className="h-4 w-4" /> : step.icon}
@@ -72,7 +91,7 @@ export function WorkflowStepper() {
                         completed && !isActive && "text-emerald-700",
                         isActive && "text-slate-900",
                         !completed && !isActive && reachable && "text-slate-500",
-                        !completed && !isActive && !reachable && "text-slate-300",
+                        !completed && !isActive && !reachable && "text-slate-300"
                       )}
                     >
                       {step.label}
@@ -84,7 +103,7 @@ export function WorkflowStepper() {
                       <div
                         className={cn(
                           "h-full rounded-full transition-colors duration-300",
-                          completed ? "bg-emerald-500" : "bg-slate-200",
+                          completed ? "bg-emerald-500" : "bg-slate-200"
                         )}
                       />
                     </div>
@@ -137,7 +156,7 @@ export function WorkflowStepper() {
                   isActive && "w-6 bg-slate-900",
                   completed && !isActive && "w-2 cursor-pointer bg-emerald-500",
                   !completed && !isActive && reachable && "w-2 cursor-pointer bg-slate-300",
-                  !completed && !isActive && !reachable && "w-2 cursor-not-allowed bg-slate-200",
+                  !completed && !isActive && !reachable && "w-2 cursor-not-allowed bg-slate-200"
                 )}
               />
             );

@@ -33,15 +33,13 @@ function ScorePill({
     <div
       className={cn(
         "flex flex-col items-center gap-0.5 rounded-lg border px-4 py-2 text-center",
-        variant === "after"
-          ? "border-emerald-200 bg-emerald-50"
-          : "border-slate-200 bg-slate-50",
+        variant === "after" ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50"
       )}
     >
       <span
         className={cn(
           "text-2xl font-extrabold tabular-nums",
-          variant === "after" ? "text-emerald-700" : "text-slate-700",
+          variant === "after" ? "text-emerald-700" : "text-slate-700"
         )}
       >
         {score}
@@ -80,7 +78,7 @@ export function StepPreview() {
               <span
                 className={cn(
                   "text-lg font-bold",
-                  delta > 0 ? "text-emerald-600" : "text-slate-400",
+                  delta > 0 ? "text-emerald-600" : "text-slate-400"
                 )}
               >
                 {delta > 0 ? `+${delta}` : delta === 0 ? "±0" : delta}
@@ -102,13 +100,17 @@ export function StepPreview() {
               "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
               activeTab === tab.id
                 ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700",
+                : "text-slate-500 hover:text-slate-700"
             )}
           >
             {tab.icon}
             <span className="hidden sm:inline">{tab.label}</span>
             <span className="sm:hidden">
-              {tab.id === "original" ? "Original" : tab.id === "customized" ? "Optimized" : "Changes"}
+              {tab.id === "original"
+                ? "Original"
+                : tab.id === "customized"
+                  ? "Optimized"
+                  : "Changes"}
             </span>
           </button>
         ))}

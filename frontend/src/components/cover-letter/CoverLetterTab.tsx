@@ -21,14 +21,13 @@ import {
   generateCoverLetter,
   type CoverLetterResult,
 } from "@/features/workflow/services/cover-letter.service";
-import {
-  exportResume,
-  downloadBlob,
-} from "@/features/workflow/services/export-resume.service";
+import { exportResume, downloadBlob } from "@/features/workflow/services/export-resume.service";
 import { pushToast } from "@/lib/toast";
 
 export function CoverLetterTab() {
-  const resume = useWorkflowStore((s) => s.optimizeResult?.customizedResume ?? s.uploadData?.resume);
+  const resume = useWorkflowStore(
+    (s) => s.optimizeResult?.customizedResume ?? s.uploadData?.resume
+  );
   const jdData = useWorkflowStore((s) => s.jdData);
   const coverLetter = useWorkflowStore((s) => s.coverLetter);
   const setCoverLetter = useWorkflowStore((s) => s.setCoverLetter);
@@ -108,8 +107,8 @@ export function CoverLetterTab() {
           </div>
           <CardTitle>Generate Cover Letter</CardTitle>
           <CardDescription>
-            Create a professional, job-specific cover letter using your resume and the analyzed job description.
-            No information will be invented — only real skills and experience.
+            Create a professional, job-specific cover letter using your resume and the analyzed job
+            description. No information will be invented — only real skills and experience.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -121,9 +120,7 @@ export function CoverLetterTab() {
             <Sparkles className="h-4 w-4" />
             Generate Cover Letter
           </Button>
-          {mutation.isError && (
-            <p className="text-sm text-red-600">{mutation.error.message}</p>
-          )}
+          {mutation.isError && <p className="text-sm text-red-600">{mutation.error.message}</p>}
         </CardContent>
       </Card>
     );
@@ -135,12 +132,8 @@ export function CoverLetterTab() {
       <Card>
         <CardContent className="flex flex-col items-center py-12">
           <Loader2 className="h-10 w-10 animate-spin text-violet-400" />
-          <p className="mt-4 text-sm font-medium text-slate-700">
-            Generating your cover letter...
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            This may take a few seconds
-          </p>
+          <p className="mt-4 text-sm font-medium text-slate-700">Generating your cover letter...</p>
+          <p className="mt-1 text-xs text-slate-400">This may take a few seconds</p>
         </CardContent>
       </Card>
     );
@@ -188,7 +181,11 @@ export function CoverLetterTab() {
             <CardContent>
               <div className="flex flex-wrap gap-1.5">
                 {coverLetter!.strengthsHighlighted.map((s, i) => (
-                  <Badge key={i} variant="secondary" className="bg-violet-50 text-xs text-violet-700">
+                  <Badge
+                    key={i}
+                    variant="secondary"
+                    className="bg-violet-50 text-xs text-violet-700"
+                  >
                     {s}
                   </Badge>
                 ))}
@@ -205,7 +202,11 @@ export function CoverLetterTab() {
             <CardContent>
               <div className="flex flex-wrap gap-1.5">
                 {coverLetter!.matchingSkillsUsed.map((s, i) => (
-                  <Badge key={i} variant="secondary" className="bg-emerald-50 text-xs text-emerald-700">
+                  <Badge
+                    key={i}
+                    variant="secondary"
+                    className="bg-emerald-50 text-xs text-emerald-700"
+                  >
                     {s}
                   </Badge>
                 ))}

@@ -8,11 +8,7 @@ type Props = {
 
 export function MatchedKeywords({ keywords }: Props) {
   if (keywords.length === 0) {
-    return (
-      <p className="text-sm text-slate-400 italic">
-        No matched keywords found.
-      </p>
-    );
+    return <p className="text-sm italic text-slate-400">No matched keywords found.</p>;
   }
 
   return (

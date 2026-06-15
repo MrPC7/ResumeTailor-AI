@@ -35,7 +35,7 @@ export function StepJD() {
   const [mode, setMode] = useState<"edit" | "review">(storedJdData ? "review" : "edit");
   const [analyzedJD, setAnalyzedJD] = useState<AnalyzedJD | null>(storedJdData?.analyzedJD ?? null);
   const [jobDescriptionValue, setJobDescriptionValue] = useState(
-    storedJdData?.jobDescription ?? "",
+    storedJdData?.jobDescription ?? ""
   );
 
   const {
@@ -56,16 +56,16 @@ export function StepJD() {
       setAnalyzedJD(data);
       setJobDescriptionValue(variables.jobDescription);
       setMode("review");
-      pushToast({ type: "success", message: `Job description analyzed — ${data.requiredSkills.length} required skills identified.` });
+      pushToast({
+        type: "success",
+        message: `Job description analyzed — ${data.requiredSkills.length} required skills identified.`,
+      });
     },
   });
 
   const onSubmit = (values: FormValues) => {
     // Avoid unnecessary API call if the JD text hasn't changed.
-    if (
-      storedJdData &&
-      values.jobDescription.trim() === storedJdData.jobDescription.trim()
-    ) {
+    if (storedJdData && values.jobDescription.trim() === storedJdData.jobDescription.trim()) {
       completeJD(storedJdData);
       return;
     }

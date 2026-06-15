@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  Sparkles,
-  XCircle,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Sparkles, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,7 +79,7 @@ export function StepRecommendations() {
         resume,
         analyzedJD,
         acceptedRecs,
-        rejectedRecs,
+        rejectedRecs
       );
       const atsComparison = await compareATS(resume, customizedResume, analyzedJD);
       return { customizedResume, atsComparison, acceptedRecs, rejectedRecs };
@@ -235,7 +229,7 @@ export function StepRecommendations() {
         <RecommendationPanel
           report={recReport}
           currentScore={atsResult?.overallScore ?? 0}
-          potentialScore={potentialScore?.potentialScore ?? (atsResult?.overallScore ?? 0)}
+          potentialScore={potentialScore?.potentialScore ?? atsResult?.overallScore ?? 0}
           selectedIds={selectedActions}
           onSelectionChange={handleSelectionChange}
         />
@@ -244,9 +238,7 @@ export function StepRecommendations() {
         <Card>
           <CardHeader>
             <CardTitle>Recommended Actions</CardTitle>
-            <CardDescription>
-              Select the improvements to apply to your resume.
-            </CardDescription>
+            <CardDescription>Select the improvements to apply to your resume.</CardDescription>
           </CardHeader>
           <CardContent>
             {atsResult && atsResult.recommendedActions.length > 0 ? (

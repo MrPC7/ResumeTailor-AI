@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  AlertCircle,
-  ShieldCheck,
-  ThumbsDown,
-  ThumbsUp,
-  TrendingUp,
-} from "lucide-react";
+import { AlertCircle, ShieldCheck, ThumbsDown, ThumbsUp, TrendingUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,8 +66,7 @@ export function StepATS() {
 
         setAtsStepData((prev) => {
           if (!prev) return prev;
-          const ps =
-            potentialScore.status === "fulfilled" ? potentialScore.value : null;
+          const ps = potentialScore.status === "fulfilled" ? potentialScore.value : null;
           const rr = recReport.status === "fulfilled" ? recReport.value : null;
 
           // Build recommendation-level default selections from the full report.
@@ -88,7 +81,12 @@ export function StepATS() {
             }
           }
 
-          return { ...prev, potentialScore: ps, recReport: rr, selectedRecommendations: recSelections };
+          return {
+            ...prev,
+            potentialScore: ps,
+            recReport: rr,
+            selectedRecommendations: recSelections,
+          };
         });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to analyze resume.");
@@ -172,9 +170,7 @@ export function StepATS() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base">Your Current ATS Score</CardTitle>
-              <CardDescription>
-                AI-powered evaluation against this job description.
-              </CardDescription>
+              <CardDescription>AI-powered evaluation against this job description.</CardDescription>
             </div>
             <div className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-slate-500" />
@@ -192,7 +188,7 @@ export function StepATS() {
       {/* Potential score banner */}
       {potentialScore && potentialScore.improvementPotential > 0 && (
         <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <CardContent className="flex items-center justify-between py-4 px-5">
+          <CardContent className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
                 <TrendingUp className="h-5 w-5 text-blue-600" />
@@ -202,7 +198,8 @@ export function StepATS() {
                   Potential Score: {potentialScore.potentialScore}
                 </p>
                 <p className="text-xs text-slate-500">
-                  Up to +{potentialScore.improvementPotential} points achievable with recommendations
+                  Up to +{potentialScore.improvementPotential} points achievable with
+                  recommendations
                 </p>
               </div>
             </div>
@@ -302,9 +299,7 @@ export function StepATS() {
         <Button variant="outline" size="sm" onClick={goPrev}>
           ← Previous
         </Button>
-        <Button onClick={handleContinue}>
-          View Recommendations →
-        </Button>
+        <Button onClick={handleContinue}>View Recommendations →</Button>
       </div>
     </div>
   );
