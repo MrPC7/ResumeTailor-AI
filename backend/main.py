@@ -18,6 +18,7 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="google.api_cor
 
 from api.analyze_jd import router as analyze_jd_router
 from api.ats import router as ats_router
+from api.cover_letter import router as cover_letter_router
 from api.customize_resume import router as customize_resume_router
 from api.export import router as export_router
 from api.extract_resume import router as extract_resume_router
@@ -106,3 +107,4 @@ app.include_router(analyze_jd_router, prefix="/api")
 app.include_router(customize_resume_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
 app.include_router(ats_router, prefix="/api")
+app.include_router(cover_letter_router, prefix="/api")

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type {
   ATSStepData,
+  CoverLetterData,
   JDStepData,
   OptimizeResult,
   UploadStepData,
@@ -42,6 +43,7 @@ type State = {
   jdData: JDStepData | null;
   atsStepData: ATSStepData | null;
   optimizeResult: OptimizeResult | null;
+  coverLetter: CoverLetterData | null;
 };
 
 type Actions = {
@@ -59,6 +61,9 @@ type Actions = {
   updateSelectedRecommendations: (selections: Record<string, boolean>) => void;
   completeRecommendations: (result: OptimizeResult) => void;
   completePreview: () => void;
+
+  setCoverLetter: (data: CoverLetterData) => void;
+  clearCoverLetter: () => void;
 
   reset: () => void;
 };
@@ -99,6 +104,7 @@ const INITIAL_STATE: State = {
   jdData: null,
   atsStepData: null,
   optimizeResult: null,
+  coverLetter: null,
 };
 
 // ── Store ─────────────────────────────────────────────────────────────────
@@ -146,6 +152,7 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
       // Invalidate atsStepData + optimizeResult as they depend on the resume.
       atsStepData: null,
       optimizeResult: null,
+      coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "upload"),
       currentStep: nextStep("upload"),
     })),
@@ -155,6 +162,7 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
       jdData: data,
       atsStepData: null,
       optimizeResult: null,
+      coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "jd"),
       currentStep: nextStep("jd"),
     })),
@@ -163,6 +171,7 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
     set((s) => ({
       atsStepData: data,
       optimizeResult: null,
+      coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "ats"),
       currentStep: nextStep("ats"),
     })),
@@ -191,6 +200,9 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
       completedSteps: advanceCompleted(s.completedSteps, "preview"),
       currentStep: nextStep("preview"),
     })),
+
+  setCoverLetter: (data) => set({ coverLetter: data }),
+  clearCoverLetter: () => set({ coverLetter: null }),
 
   reset: () => set(INITIAL_STATE),
 }));

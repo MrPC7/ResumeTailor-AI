@@ -114,3 +114,9 @@ export type OptimizeResult = {
   customizedResume: StructuredResume;
   atsComparison: ATSComparisonResult;
 };
+
+export type CoverLetterData = {
+  coverLetter: string;
+  strengthsHighlighted: string[];
+  matchingSkillsUsed: string[];
+};

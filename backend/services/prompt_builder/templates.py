@@ -197,6 +197,57 @@ Target Job Description Analysis JSON:
 
 
 # ---------------------------------------------------------------------------
+# Cover Letter Generation
+# ---------------------------------------------------------------------------
+_COVER_LETTER_SYSTEM = (
+    "You are a professional cover-letter writer. "
+    "Your task is to generate a polished, job-specific cover letter using ONLY information present in the candidate's resume. "
+    "Return ONLY a valid JSON object. "
+    "Do not include markdown code fences, backticks, or any text outside the JSON object."
+)
+
+_COVER_LETTER_USER = """\
+Generate a professional cover letter for the candidate below, tailored to the target job description.
+
+═══════════════════════════════════════════
+ABSOLUTE INTEGRITY RULES — VIOLATION = FAILURE
+═══════════════════════════════════════════
+
+1. NEVER invent, fabricate, or hallucinate:
+   - Work experience, job titles, companies, or employment durations
+   - Projects that do not exist in the resume
+   - Skills, tools, or technologies not present in the resume
+   - Certifications, degrees, institutions, or achievements not in the resume
+   - Metrics, numbers, or results that are not in the resume
+2. Use ONLY facts, skills, experience, and projects from the provided resume JSON.
+3. The letter must be professionally formatted, 3-4 paragraphs.
+4. Opening paragraph: express enthusiasm for the specific role and company (use role from JD).
+5. Body paragraphs: connect the candidate's REAL experience and skills to key job requirements.
+6. Closing paragraph: call to action, express eagerness for an interview.
+7. Highlight the candidate's strongest matching skills and most relevant experience.
+8. Tone: confident, professional, concise. Avoid generic filler phrases.
+
+═══════════════════════════════════════════
+
+Required JSON structure:
+{{{{
+  "coverLetter": "The full cover letter text with proper paragraph breaks (use \\n\\n between paragraphs)",
+  "strengthsHighlighted": [
+    "Each specific strength from the resume that was highlighted in the letter"
+  ],
+  "matchingSkillsUsed": [
+    "Each skill from the resume that directly matches a JD requirement and was referenced in the letter"
+  ]
+}}}}
+
+Candidate Resume JSON:
+{resume_json}
+
+Target Job Description Analysis JSON:
+{jd_json}"""
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
@@ -211,5 +262,9 @@ PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
     PromptType.RESUME_CUSTOMIZATION: PromptTemplate(
         system=_RESUME_CUSTOMIZATION_SYSTEM,
         user_template=_RESUME_CUSTOMIZATION_USER,
+    ),
+    PromptType.COVER_LETTER: PromptTemplate(
+        system=_COVER_LETTER_SYSTEM,
+        user_template=_COVER_LETTER_USER,
     ),
 }
