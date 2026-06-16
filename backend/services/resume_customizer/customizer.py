@@ -12,6 +12,12 @@ from services.llm import (
     LLMParseError,
     LLMClient,
 )
+from services.resume_customizer.length_guard import (
+    compress_resume,
+    estimate_pdf_overflow,
+    measure_resume,
+    needs_compression,
+)
 
 
 class ResumeCustomizationError(Exception):
@@ -24,7 +30,7 @@ class ResumeCustomizer:
         self._max_retries = max(1, max_retries)
 
     @staticmethod
-    def _to_response(raw: CustomizeResumeRaw, original: ExtractResumeResponse) -> CustomizeResumeResponse:
+    def _to_response(raw: CustomizeResumeRaw, original: ExtractResumeResponse, compressed: bool = False) -> CustomizeResumeResponse:
         cr = raw.customizedResume
 
         # Preserve immutable identity fields from the original to prevent LLM drift.
@@ -41,6 +47,7 @@ class ResumeCustomizer:
         return CustomizeResumeResponse(
             customizedResume=customized,
             suggestions=raw.suggestions,
+            compressed=compressed,
         )
 
     async def customize(self, payload: CustomizeResumeRequest) -> CustomizeResumeResponse:
@@ -63,7 +70,19 @@ class ResumeCustomizer:
             try:
                 raw_json = await self._client.generate_json(prompt)
                 validated = CustomizeResumeRaw.model_validate(raw_json)
-                return self._to_response(validated, payload.resume)
+                response = self._to_response(validated, payload.resume)
+
+                # Length guard: compress if customized resume is too long
+                original_metrics = measure_resume(payload.resume)
+                customized_metrics = measure_resume(response.customizedResume)
+                compressed = False
+
+                if needs_compression(original_metrics, customized_metrics) or estimate_pdf_overflow(response.customizedResume):
+                    response.customizedResume = await compress_resume(self._client, response.customizedResume)
+                    compressed = True
+
+                response.compressed = compressed
+                return response
             except LLMAPIError:
                 # Non-retryable: missing API key, quota exceeded, network failure.
                 raise

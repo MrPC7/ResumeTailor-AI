@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle2, Loader2, Sparkles, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileCheck, Loader2, Sparkles, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +33,7 @@ export function StepRecommendations() {
     rejected: string[];
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [compressed, setCompressed] = useState(false);
 
   const selectedActions = atsStepData?.selectedRecommendations ?? {};
 
@@ -75,14 +76,14 @@ export function StepRecommendations() {
         }
       }
 
-      const { customizedResume } = await customizeResume(
+      const { customizedResume, compressed: wasCompressed } = await customizeResume(
         resume,
         analyzedJD,
         acceptedRecs,
         rejectedRecs
       );
       const atsComparison = await compareATS(resume, customizedResume, analyzedJD);
-      return { customizedResume, atsComparison, acceptedRecs, rejectedRecs };
+      return { customizedResume, atsComparison, acceptedRecs, rejectedRecs, wasCompressed };
     },
     onSuccess: (result) => {
       const outcome: OptimizeResult = {
@@ -91,6 +92,7 @@ export function StepRecommendations() {
       };
       setOptimizeResult(outcome);
       setAppliedSummary({ accepted: result.acceptedRecs, rejected: result.rejectedRecs });
+      setCompressed(result.wasCompressed ?? false);
       setPhase("done");
     },
     onError: (e) => {
@@ -156,6 +158,16 @@ export function StepRecommendations() {
                 : "Resume customized. Review the comparison below."}
             </CardDescription>
           </CardHeader>
+          {compressed && (
+            <CardContent className="pt-0">
+              <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2">
+                <FileCheck className="h-4 w-4 shrink-0 text-blue-600" />
+                <p className="text-sm text-blue-700">
+                  Resume optimized and compressed to preserve A4 layout.
+                </p>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         <ATSComparisonCard comparison={atsComparison} />

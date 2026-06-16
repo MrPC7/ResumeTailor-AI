@@ -142,6 +142,19 @@ ABSOLUTE INTEGRITY RULES — VIOLATION = FAILURE
    - Incorporate ATS keywords into existing descriptions WHERE factually accurate
 
 ═══════════════════════════════════════════
+LENGTH PRESERVATION RULES — CRITICAL
+═══════════════════════════════════════════
+
+5. Preserve the EXACT same number of sections as the original resume.
+6. Preserve the EXACT same number of experience entries and project entries — do NOT add new ones.
+7. Do NOT add new sections, bullet points, or list items that did not exist in the original.
+8. Do NOT significantly increase content length — prefer REWRITING over EXPANDING.
+9. Keep descriptions concise and ATS-friendly — remove verbosity, not add it.
+10. Target a ONE-PAGE resume whenever possible — brevity is critical.
+11. Each experience description should be ≤ 3 concise sentences.
+12. Summary should be ≤ 2 sentences.
+
+═══════════════════════════════════════════
 ACCEPTED RECOMMENDATIONS (apply these)
 ═══════════════════════════════════════════
 {accepted_json}
