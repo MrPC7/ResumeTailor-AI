@@ -1,5 +1,7 @@
 # ResumeTailor AI
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 AI-powered resume tailoring application that optimizes resumes for specific job postings using LLM analysis, ATS scoring, and intelligent recommendations.
 
 ---
@@ -616,3 +618,9 @@ npx shadcn@latest add card
 ```
 
 Components are placed in `src/components/ui/` automatically. Configuration lives in `components.json`.
+
+---
+
+## License
+
+MIT © [Pranshu Chaurasia](https://pranshuchaurasia.dev)
