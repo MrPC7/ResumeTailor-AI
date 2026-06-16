@@ -74,12 +74,33 @@ class ResumeExporter:
                     page = document.new_page()
                     y = MARGIN
 
+            def _wrap_text(text: str, fontsize: float, fontname: str) -> list[str]:
+                """Word-wrap text to fit within page margins."""
+                max_width = right_limit - left
+                words = text.split()
+                lines: list[str] = []
+                current_line = ""
+                for word in words:
+                    test = f"{current_line} {word}".strip()
+                    tw = fitz.get_text_length(test, fontname=fontname, fontsize=fontsize)
+                    if tw <= max_width:
+                        current_line = test
+                    else:
+                        if current_line:
+                            lines.append(current_line)
+                        current_line = word
+                if current_line:
+                    lines.append(current_line)
+                return lines or [" "]
+
             def _write(text: str, fontsize: float, fontname: str, line_height: float) -> None:
                 nonlocal y
                 for raw_line in text.split("\n"):
-                    _ensure_space(line_height)
-                    page.insert_text((left, y), raw_line or " ", fontsize=fontsize, fontname=fontname)
-                    y += line_height
+                    wrapped = _wrap_text(raw_line or " ", fontsize, fontname)
+                    for wl in wrapped:
+                        _ensure_space(line_height)
+                        page.insert_text((left, y), wl, fontsize=fontsize, fontname=fontname)
+                        y += line_height
 
             # Name
             _write(resume.name or "Customized Resume", NAME_SIZE, FONT_BOLD, NAME_LINE_HEIGHT)

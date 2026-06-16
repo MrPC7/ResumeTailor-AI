@@ -4,6 +4,7 @@ import type { AnalyzedJD, StructuredResume } from "@/features/workflow/types/wor
 type CustomizeResumeResponse = {
   customizedResume: StructuredResume;
   suggestions: string[];
+  compressed: boolean;
 };
 
 export function customizeResume(

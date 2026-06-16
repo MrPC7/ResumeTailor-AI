@@ -48,3 +48,4 @@ class CustomizeResumeRequest(BaseModel):
 class CustomizeResumeResponse(BaseModel):
     customizedResume: ExtractResumeResponse
     suggestions: list[str]
+    compressed: bool = False

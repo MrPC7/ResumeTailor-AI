@@ -5,8 +5,10 @@ from io import BytesIO
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 
-from schemas.export import ExportResumeRequest
+from schemas.export import ExportFormat, ExportResumeRequest
 from services.export_service import ResumeExportError, resume_exporter
+from services.resume_customizer.length_guard import compress_resume, estimate_pdf_overflow
+from services.llm import llm_client
 
 router = APIRouter()
 
@@ -14,7 +16,13 @@ router = APIRouter()
 @router.post("/export")
 async def export_resume(body: ExportResumeRequest) -> StreamingResponse:
     try:
-        export_file = resume_exporter.export(body.resume, body.format)
+        resume = body.resume
+
+        # PDF overflow guard: compress content if it risks overflowing A4.
+        if body.format == ExportFormat.PDF and estimate_pdf_overflow(resume):
+            resume = await compress_resume(llm_client, resume)
+
+        export_file = resume_exporter.export(resume, body.format)
         base_name = resume_exporter.build_file_base_name(body.resume.name, body.file_name)
         file_name = f"{base_name}_customized.{export_file.extension}"
 
