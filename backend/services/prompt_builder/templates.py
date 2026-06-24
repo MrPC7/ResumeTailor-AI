@@ -322,6 +322,80 @@ Job Description Analysis JSON:
 
 
 # ---------------------------------------------------------------------------
+# Candidate Profile Extraction (v2 multi-agent)
+# ---------------------------------------------------------------------------
+_CANDIDATE_PROFILE_SYSTEM = (
+    "You are an expert resume analyst. "
+    "Extract factual, structured information from raw resume text. "
+    "Do NOT evaluate, score, or make judgments — only extract facts. "
+    "Return ONLY a valid JSON object. "
+    "Do not include markdown code fences, backticks, or any text outside the JSON object."
+)
+
+_CANDIDATE_PROFILE_USER = """\
+Extract a structured candidate profile from the resume text below.
+
+Focus on factual extraction only — do NOT score or evaluate.
+
+Required JSON structure:
+{{
+  "skills": [
+    {{
+      "name": "Skill or technology name",
+      "category": "One of: Programming Language, Framework, Database, Cloud, DevOps, Tool, Soft Skill, Domain, Other"
+    }}
+  ],
+  "work_experience": [
+    {{
+      "company": "Company name",
+      "position": "Job title",
+      "duration": "e.g. Jan 2022 - Present or 2019 - 2021",
+      "responsibilities": ["Each key responsibility or achievement as a separate string"],
+      "technologies": ["Technologies used in this role"]
+    }}
+  ],
+  "education": [
+    {{
+      "institution": "University or school name",
+      "degree": "Degree title (e.g. B.Tech, M.Sc, MBA)",
+      "field_of_study": "Field or major (e.g. Computer Science)",
+      "year": "Graduation year or duration"
+    }}
+  ],
+  "projects": [
+    {{
+      "name": "Project name",
+      "description": "What the project does",
+      "technologies": ["Tech1", "Tech2"],
+      "role": "Candidate's role in the project"
+    }}
+  ],
+  "certifications": [
+    {{
+      "name": "Certification name",
+      "issuer": "Issuing organization",
+      "year": "Year obtained or expiry"
+    }}
+  ],
+  "total_years_experience": <number or null if cannot be determined>,
+  "primary_domain": "The candidate's primary professional domain (e.g. Backend Development, Data Science, DevOps)"
+}}
+
+Rules:
+- Extract ALL skills mentioned anywhere in the resume — do not skip any.
+- Categorize each skill into exactly one category.
+- List work experience with most recent first.
+- Extract individual responsibilities as separate list items, not merged paragraphs.
+- List technologies per role based on what's mentioned in that specific role.
+- Use null for total_years_experience only if it truly cannot be inferred from dates.
+- Use empty arrays [] for any missing list fields.
+- Do NOT fabricate or infer information not present in the text.
+
+Resume Text:
+{raw_text}"""
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
@@ -344,5 +418,9 @@ PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
     PromptType.ATS_EVALUATION: PromptTemplate(
         system=_ATS_EVALUATION_SYSTEM,
         user_template=_ATS_EVALUATION_USER,
+    ),
+    PromptType.CANDIDATE_PROFILE_EXTRACTION: PromptTemplate(
+        system=_CANDIDATE_PROFILE_SYSTEM,
+        user_template=_CANDIDATE_PROFILE_USER,
     ),
 }
