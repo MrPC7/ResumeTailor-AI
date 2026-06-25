@@ -273,3 +273,54 @@ class JobProfile(BaseModel):
             return normalized
         # Default to empty if unrecognizable — deterministic, no guessing
         return raw if raw else ""
+
+
+# ---------------------------------------------------------------------------
+# Recruiter Evaluation — output of RecruiterAgent
+# ---------------------------------------------------------------------------
+
+MATCH_LEVELS = Literal["strong_match", "good_match", "partial_match", "weak_match", "no_match"]
+
+
+class RecruiterEvaluation(BaseModel):
+    """Structured recruiter evaluation of a candidate against a job profile.
+
+    This is the output of the RecruiterAgent and feeds into the
+    ResumeTailorAgent and ReevaluatorAgent downstream.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    match_level: str = ""
+    hiring_confidence: int = Field(default=0, ge=0, le=100)
+    interview_probability: int = Field(default=0, ge=0, le=100)
+    strengths: list[str] = Field(default_factory=list)
+    gaps: list[str] = Field(default_factory=list)
+    verdict: str = ""
+    reasoning: list[str] = Field(default_factory=list)
+
+    @field_validator("match_level", mode="before")
+    @classmethod
+    def coerce_match_level(cls, v: object) -> str:
+        raw = _coerce_str(v).strip().lower().replace(" ", "_")
+        valid = {"strong_match", "good_match", "partial_match", "weak_match", "no_match"}
+        return raw if raw in valid else _coerce_str(v).strip().lower()
+
+    @field_validator("verdict", mode="before")
+    @classmethod
+    def coerce_verdict(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    @field_validator("hiring_confidence", "interview_probability", mode="before")
+    @classmethod
+    def coerce_score(cls, v: object) -> int:
+        if isinstance(v, int):
+            return max(0, min(100, v))
+        if isinstance(v, float):
+            return max(0, min(100, int(v)))
+        if isinstance(v, str):
+            try:
+                return max(0, min(100, int(float(v.strip().rstrip("%")))))
+            except ValueError:
+                return 0
+        return 0

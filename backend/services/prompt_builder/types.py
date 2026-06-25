@@ -13,3 +13,4 @@ class PromptType(str, Enum):
     # v2 multi-agent pipeline
     CANDIDATE_PROFILE_EXTRACTION = "candidate_profile_extraction"
     JOB_PROFILE_EXTRACTION = "job_profile_extraction"
+    RECRUITER_EVALUATION = "recruiter_evaluation"

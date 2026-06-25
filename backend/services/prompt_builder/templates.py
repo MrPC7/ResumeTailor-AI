@@ -458,6 +458,90 @@ Job Description:
 
 
 # ---------------------------------------------------------------------------
+# Recruiter Evaluation (v2 multi-agent)
+# ---------------------------------------------------------------------------
+_RECRUITER_EVALUATION_SYSTEM = (
+    "You are a Senior Technical Recruiter with 15+ years of hiring experience. "
+    "Evaluate candidates strictly based on evidence presented in their profile. "
+    "You must NEVER hallucinate, infer, or assume experience not explicitly stated. "
+    "Return ONLY a valid JSON object. "
+    "Do not include markdown code fences, backticks, or any text outside the JSON object."
+)
+
+_RECRUITER_EVALUATION_USER = """\
+Evaluate this candidate against the job requirements as a Senior Technical Recruiter.
+
+═══════════════════════════════════════════
+EVALUATION RULES — STRICT COMPLIANCE REQUIRED
+═══════════════════════════════════════════
+
+1. Use ONLY evidence from the Candidate Profile. Do NOT assume or infer unstated experience.
+2. Penalize heavily for missing MUST-HAVE skills — each missing critical skill reduces confidence significantly.
+3. Reward strong project evidence — real projects demonstrating required skills are high-signal.
+4. Preferred skills are bonus points only — never penalize for missing preferred skills.
+5. Experience years matter — if min_years required exceeds candidate's total, flag it as a gap.
+6. Every score MUST be justified in the reasoning array.
+7. match_level must be one of: strong_match, good_match, partial_match, weak_match, no_match.
+
+═══════════════════════════════════════════
+SCORING GUIDELINES
+═══════════════════════════════════════════
+
+hiring_confidence (0-100):
+- 80-100: Candidate meets all must-have skills + has relevant experience depth
+- 60-79: Meets most must-have skills, minor gaps compensated by strong evidence elsewhere
+- 40-59: Missing 2-3 critical skills but has transferable experience
+- 20-39: Missing majority of critical requirements
+- 0-19: Fundamentally misaligned profile
+
+interview_probability (0-100):
+- 80-100: Would immediately shortlist for interview
+- 60-79: Would likely advance to phone screen
+- 40-59: Borderline — depends on candidate pool quality
+- 20-39: Would probably pass unless pool is thin
+- 0-19: Would not advance
+
+match_level mapping:
+- strong_match: hiring_confidence >= 80
+- good_match: hiring_confidence 60-79
+- partial_match: hiring_confidence 40-59
+- weak_match: hiring_confidence 20-39
+- no_match: hiring_confidence < 20
+
+═══════════════════════════════════════════
+
+Required JSON structure:
+{{
+  "match_level": "one of: strong_match, good_match, partial_match, weak_match, no_match",
+  "hiring_confidence": <int 0-100>,
+  "interview_probability": <int 0-100>,
+  "strengths": [
+    "Each specific strength backed by evidence from the candidate profile (cite skill/project/experience)"
+  ],
+  "gaps": [
+    "Each gap or missing requirement with specific skill/qualification that is absent"
+  ],
+  "verdict": "One-sentence hiring recommendation (e.g. 'Strong backend candidate, recommend immediate interview' or 'Missing core ML skills, not suitable for this role')",
+  "reasoning": [
+    "Step-by-step explanation of how each score was derived, referencing specific evidence"
+  ]
+}}
+
+Rules:
+- strengths must reference specific skills, projects, or experience entries from the profile.
+- gaps must reference specific must-have requirements from the job profile that are missing.
+- reasoning must have at least 3 entries explaining the evaluation logic.
+- verdict must be a single concise sentence.
+- Do NOT include generic filler — every item must be specific and evidence-based.
+
+Candidate Profile:
+{candidate_json}
+
+Job Requirements:
+{job_json}"""
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
@@ -488,5 +572,9 @@ PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
     PromptType.JOB_PROFILE_EXTRACTION: PromptTemplate(
         system=_JOB_PROFILE_SYSTEM,
         user_template=_JOB_PROFILE_USER,
+    ),
+    PromptType.RECRUITER_EVALUATION: PromptTemplate(
+        system=_RECRUITER_EVALUATION_SYSTEM,
+        user_template=_RECRUITER_EVALUATION_USER,
     ),
 }
