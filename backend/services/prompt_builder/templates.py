@@ -396,6 +396,68 @@ Resume Text:
 
 
 # ---------------------------------------------------------------------------
+# Job Profile Extraction (v2 multi-agent)
+# ---------------------------------------------------------------------------
+_JOB_PROFILE_SYSTEM = (
+    "You are an expert technical recruiter and job description analyst. "
+    "Extract structured, factual information from job descriptions. "
+    "Do NOT evaluate or score — only extract facts. "
+    "Return ONLY a valid JSON object. "
+    "Do not include markdown code fences, backticks, or any text outside the JSON object."
+)
+
+_JOB_PROFILE_USER = """\
+Extract a structured job profile from the job description below.
+
+Focus on factual extraction only — do NOT evaluate or score candidates.
+
+Required JSON structure:
+{{
+  "role": "Exact job title as stated in the JD",
+  "seniority": "One of: Intern, Junior, Mid, Senior, Lead, Principal, Staff, Director, VP, C-Level",
+  "must_have_skills": [
+    {{
+      "name": "Skill or technology explicitly marked as required/mandatory",
+      "category": "One of: Programming Language, Framework, Database, Cloud, DevOps, Tool, Soft Skill, Domain, Other"
+    }}
+  ],
+  "preferred_skills": [
+    {{
+      "name": "Skill or technology marked as preferred/nice-to-have/bonus",
+      "category": "One of: Programming Language, Framework, Database, Cloud, DevOps, Tool, Soft Skill, Domain, Other"
+    }}
+  ],
+  "responsibilities": [
+    {{
+      "description": "A single responsibility or duty as a concise statement",
+      "priority": "One of: high, medium, low — based on emphasis and ordering in the JD"
+    }}
+  ],
+  "experience_required": {{
+    "min_years": <number or null if not specified>,
+    "max_years": <number or null if not specified>,
+    "domain": "Required domain of experience (e.g. Backend Development, Machine Learning)"
+  }}
+}}
+
+Rules:
+- must_have_skills: ONLY skills explicitly stated as required, mandatory, or essential.
+- preferred_skills: ONLY skills stated as preferred, nice-to-have, bonus, or a plus.
+- Do NOT put the same skill in both must_have and preferred — pick the stronger signal.
+- Categorize each skill into exactly one category.
+- responsibilities: Extract each distinct duty as a separate item. First-listed or emphasized items are "high" priority.
+- seniority: Infer from title, years required, and scope if not stated explicitly.
+- experience_required.min_years: Extract the minimum years required (e.g. "3+ years" → 3.0).
+- experience_required.max_years: Extract maximum if stated (e.g. "3-5 years" → max 5.0), otherwise null.
+- Use null for any numeric field that cannot be determined.
+- Use empty arrays [] for any missing list fields.
+- Do NOT fabricate information not present in the text.
+
+Job Description:
+{job_description}"""
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
@@ -422,5 +484,9 @@ PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
     PromptType.CANDIDATE_PROFILE_EXTRACTION: PromptTemplate(
         system=_CANDIDATE_PROFILE_SYSTEM,
         user_template=_CANDIDATE_PROFILE_USER,
+    ),
+    PromptType.JOB_PROFILE_EXTRACTION: PromptTemplate(
+        system=_JOB_PROFILE_SYSTEM,
+        user_template=_JOB_PROFILE_USER,
     ),
 }
