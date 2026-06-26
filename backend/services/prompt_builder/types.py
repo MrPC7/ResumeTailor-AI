@@ -14,3 +14,4 @@ class PromptType(str, Enum):
     JOB_PROFILE_EXTRACTION = "job_profile_extraction"
     RECRUITER_EVALUATION = "recruiter_evaluation"
     RESUME_TAILORING = "resume_tailoring"
+    SUGGESTION_GENERATION = "suggestion_generation"

@@ -6,6 +6,7 @@ from services.agents.jd_analyzer import jd_analyzer_agent
 from services.agents.recruiter import recruiter_agent
 from services.agents.resume_tailor import resume_tailor_agent
 from services.agents.reevaluator import reevaluator_agent
+from services.agents.suggestion_generator import suggestion_generator_agent
 
 __all__ = [
     "resume_analyzer_agent",
@@ -13,4 +14,5 @@ __all__ = [
     "recruiter_agent",
     "resume_tailor_agent",
     "reevaluator_agent",
+    "suggestion_generator_agent",
 ]

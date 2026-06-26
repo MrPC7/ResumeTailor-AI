@@ -419,3 +419,70 @@ class ReevaluationResult(BaseModel):
     before: RecruiterEvaluation
     after: RecruiterEvaluation
     improvement: ImprovementMetrics
+
+
+# ---------------------------------------------------------------------------
+# Suggestion — output of SuggestionGeneratorAgent
+# ---------------------------------------------------------------------------
+
+SUGGESTION_PRIORITIES = Literal["critical", "high", "medium", "low"]
+RESUME_SECTIONS = Literal[
+    "summary", "skills", "experience", "projects", "education", "certifications"
+]
+
+
+class Suggestion(BaseModel):
+    """A single actionable resume improvement suggestion."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = ""
+    title: str = ""
+    description: str = ""
+    priority: str = ""
+    estimated_impact: str = ""
+    affected_section: str = ""
+
+    @field_validator("id", "title", "description", "estimated_impact", mode="before")
+    @classmethod
+    def coerce_strings(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    @field_validator("priority", mode="before")
+    @classmethod
+    def coerce_priority(cls, v: object) -> str:
+        raw = _coerce_str(v).strip().lower()
+        valid = {"critical", "high", "medium", "low"}
+        return raw if raw in valid else "medium"
+
+    @field_validator("affected_section", mode="before")
+    @classmethod
+    def coerce_section(cls, v: object) -> str:
+        raw = _coerce_str(v).strip().lower()
+        valid = {"summary", "skills", "experience", "projects", "education", "certifications"}
+        return raw if raw in valid else raw
+
+
+class SuggestionReport(BaseModel):
+    """Collection of actionable suggestions from the SuggestionGeneratorAgent."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    suggestions: list[Suggestion] = Field(default_factory=list)
+    total_count: int = 0
+    critical_count: int = 0
+    high_count: int = 0
+
+    @field_validator("total_count", "critical_count", "high_count", mode="before")
+    @classmethod
+    def coerce_counts(cls, v: object) -> int:
+        if isinstance(v, int):
+            return max(0, v)
+        if isinstance(v, float):
+            return max(0, int(v))
+        if isinstance(v, str):
+            try:
+                return max(0, int(v))
+            except ValueError:
+                return 0
+        return 0
