@@ -3,20 +3,29 @@ import type {
   CoverLetterData,
   JDStepData,
   RecruiterStepData,
+  SuggestionsStepData,
   UploadStepData,
   WorkflowStep,
 } from "@/features/workflow/types/workflow.types";
 
 // ── Step ordering ─────────────────────────────────────────────────────────
 
-export const STEP_ORDER: WorkflowStep[] = ["upload", "jd", "recruiter", "preview", "download"];
+export const STEP_ORDER: WorkflowStep[] = [
+  "upload",
+  "jd",
+  "recruiter",
+  "suggestions",
+  "preview",
+  "download",
+];
 
 // ── Dependency graph ─────────────────────────────────────────────────────
 
 const DOWNSTREAM: Record<WorkflowStep, WorkflowStep[]> = {
-  upload: ["recruiter", "preview", "download"],
-  jd: ["recruiter", "preview", "download"],
-  recruiter: ["preview", "download"],
+  upload: ["recruiter", "suggestions", "preview", "download"],
+  jd: ["recruiter", "suggestions", "preview", "download"],
+  recruiter: ["suggestions", "preview", "download"],
+  suggestions: ["preview", "download"],
   preview: ["download"],
   download: [],
 };
@@ -29,6 +38,7 @@ type State = {
   uploadData: UploadStepData | null;
   jdData: JDStepData | null;
   recruiterData: RecruiterStepData | null;
+  suggestionsData: SuggestionsStepData | null;
   coverLetter: CoverLetterData | null;
 };
 
@@ -41,6 +51,8 @@ type Actions = {
   completeUpload: (data: UploadStepData) => void;
   completeJD: (data: JDStepData) => void;
   completeRecruiter: (data: RecruiterStepData) => void;
+  completeSuggestions: (data: SuggestionsStepData) => void;
+  toggleSuggestion: (id: string) => void;
 
   setCoverLetter: (data: CoverLetterData) => void;
   clearCoverLetter: () => void;
@@ -76,6 +88,7 @@ const INITIAL_STATE: State = {
   uploadData: null,
   jdData: null,
   recruiterData: null,
+  suggestionsData: null,
   coverLetter: null,
 };
 
@@ -85,7 +98,7 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
   ...INITIAL_STATE,
 
   canNavigateTo: (step) => {
-    const { uploadData, jdData, recruiterData } = get();
+    const { uploadData, jdData, recruiterData, suggestionsData } = get();
     switch (step) {
       case "upload":
         return true;
@@ -93,10 +106,12 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
         return uploadData !== null;
       case "recruiter":
         return uploadData !== null && jdData !== null;
+      case "suggestions":
+        return recruiterData !== null;
       case "preview":
-        return recruiterData !== null;
+        return suggestionsData !== null;
       case "download":
-        return recruiterData !== null;
+        return suggestionsData !== null;
     }
   },
 
@@ -113,6 +128,7 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
     set((s) => ({
       uploadData: data,
       recruiterData: null,
+      suggestionsData: null,
       coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "upload"),
       currentStep: nextStep("upload"),
@@ -122,6 +138,7 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
     set((s) => ({
       jdData: data,
       recruiterData: null,
+      suggestionsData: null,
       coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "jd"),
       currentStep: nextStep("jd"),
@@ -130,10 +147,33 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
   completeRecruiter: (data) =>
     set((s) => ({
       recruiterData: data,
+      suggestionsData: null,
       coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "recruiter"),
       currentStep: nextStep("recruiter"),
     })),
+
+  completeSuggestions: (data) =>
+    set((s) => ({
+      suggestionsData: data,
+      coverLetter: null,
+      completedSteps: advanceCompleted(s.completedSteps, "suggestions"),
+      currentStep: nextStep("suggestions"),
+    })),
+
+  toggleSuggestion: (id) =>
+    set((s) => {
+      if (!s.suggestionsData) return {};
+      return {
+        suggestionsData: {
+          ...s.suggestionsData,
+          selectedSuggestions: {
+            ...s.suggestionsData.selectedSuggestions,
+            [id]: !s.suggestionsData.selectedSuggestions[id],
+          },
+        },
+      };
+    }),
 
   setCoverLetter: (data) => set({ coverLetter: data }),
   clearCoverLetter: () => set({ coverLetter: null }),

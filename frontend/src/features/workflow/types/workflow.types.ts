@@ -1,4 +1,4 @@
-export type WorkflowStep = "upload" | "jd" | "recruiter" | "preview" | "download";
+export type WorkflowStep = "upload" | "jd" | "recruiter" | "suggestions" | "preview" | "download";
 
 export type ExperienceItem = {
   company: string;
@@ -149,4 +149,19 @@ export type RecruiterStepData = {
     verdict: string;
     reasoning: string[];
   };
+};
+
+export type SuggestionsStepData = {
+  suggestions: {
+    id: string;
+    title: string;
+    description: string;
+    priority: string;
+    estimated_impact: string;
+    affected_section: string;
+  }[];
+  total_count: number;
+  critical_count: number;
+  high_count: number;
+  selectedSuggestions: Record<string, boolean>;
 };
