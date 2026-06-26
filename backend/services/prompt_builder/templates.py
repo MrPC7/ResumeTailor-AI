@@ -261,67 +261,6 @@ Target Job Description Analysis JSON:
 
 
 # ---------------------------------------------------------------------------
-# ATS Evaluation
-# ---------------------------------------------------------------------------
-_ATS_EVALUATION_SYSTEM = (
-    "You are an expert ATS (Applicant Tracking System) evaluator and career advisor. "
-    "You analyse resumes against job descriptions with the same rigour as enterprise "
-    "ATS software.  Return ONLY a valid JSON object — no markdown fences, no extra text."
-)
-
-_ATS_EVALUATION_USER = """\
-Evaluate the resume below against the job description analysis.
-
-Score each dimension from 0 to 100:
-
-1. **skills** — How well the candidate's skills match required and preferred skills.
-2. **keywords** — Coverage of ATS keywords from the JD found in the resume.
-3. **experience** — Relevance, seniority, and depth of work experience to the role.
-4. **education** — Alignment of education background with job requirements.
-5. **overallFit** — Holistic fit considering culture, domain, and transferable skills.
-
-Also provide:
-- **overallScore** — Weighted composite (skills 30%, keywords 25%, experience 25%, education 10%, overallFit 10%).
-- **confidence** — Your confidence in the evaluation accuracy (0–100).
-- **strengths** — Top 3–5 resume strengths for this role.
-- **weaknesses** — Top 3–5 gaps or weaknesses.
-- **matchedKeywords** — Specific keywords/skills from the JD that ARE found in the resume.
-- **missingKeywords** — Specific keywords/skills from the JD missing in the resume.
-- **recommendedActions** — 5–8 concrete, actionable steps to improve ATS compatibility.
-
-Required JSON structure:
-{{
-  "overallScore": <int 0-100>,
-  "confidence": <int 0-100>,
-  "scores": {{
-    "skills": <int 0-100>,
-    "keywords": <int 0-100>,
-    "experience": <int 0-100>,
-    "education": <int 0-100>,
-    "overallFit": <int 0-100>
-  }},
-  "strengths": ["..."],
-  "weaknesses": ["..."],
-  "matchedKeywords": ["..."],
-  "missingKeywords": ["..."],
-  "recommendedActions": ["..."]
-}}
-
-Rules:
-- Base scores on factual evidence in the resume — do not fabricate.
-- matchedKeywords must only contain terms that genuinely appear in BOTH the JD and the resume.
-- missingKeywords must only contain terms that genuinely appear in the JD but not the resume.
-- recommendedActions must be specific and actionable (e.g. "Add Python to your skills section").
-- If information is insufficient for a dimension, score conservatively and explain in weaknesses.
-
-Resume JSON:
-{resume_json}
-
-Job Description Analysis JSON:
-{jd_json}"""
-
-
-# ---------------------------------------------------------------------------
 # Candidate Profile Extraction (v2 multi-agent)
 # ---------------------------------------------------------------------------
 _CANDIDATE_PROFILE_SYSTEM = (
@@ -659,10 +598,6 @@ PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
     PromptType.COVER_LETTER: PromptTemplate(
         system=_COVER_LETTER_SYSTEM,
         user_template=_COVER_LETTER_USER,
-    ),
-    PromptType.ATS_EVALUATION: PromptTemplate(
-        system=_ATS_EVALUATION_SYSTEM,
-        user_template=_ATS_EVALUATION_USER,
     ),
     PromptType.CANDIDATE_PROFILE_EXTRACTION: PromptTemplate(
         system=_CANDIDATE_PROFILE_SYSTEM,

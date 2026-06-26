@@ -226,20 +226,4 @@ class TestEvaluateEndpointErrors:
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
-# ---------------------------------------------------------------------------
-# Backward compatibility tests
-# ---------------------------------------------------------------------------
 
-
-class TestBackwardCompatibility:
-    def test_ats_endpoint_still_registered(self, client: TestClient) -> None:
-        """ATS endpoints must remain functional after adding /evaluate."""
-        # Just verify the routes exist (OPTIONS returns 200 or 405, not 404)
-        response = client.options("/api/ats/analyze")
-        assert response.status_code != status.HTTP_404_NOT_FOUND
-
-    def test_evaluate_and_ats_coexist(self, client: TestClient) -> None:
-        """Both /api/evaluate and /api/ats/* should be registered."""
-        routes = [route.path for route in client.app.routes]  # type: ignore[union-attr]
-        assert "/api/evaluate" in routes
-        assert "/api/ats/analyze" in routes
