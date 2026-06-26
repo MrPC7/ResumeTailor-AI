@@ -68,10 +68,7 @@ export function RecruiterConfidenceCard({ label, value, description }: Props) {
       </div>
 
       <p
-        className={cn(
-          "mt-2 text-3xl font-bold tabular-nums",
-          confidenceTextColor(value)
-        )}
+        className={cn("mt-2 text-3xl font-bold tabular-nums", confidenceTextColor(value))}
         aria-label={`${label}: ${value} out of 100`}
       >
         {displayed}
@@ -93,9 +90,7 @@ export function RecruiterConfidenceCard({ label, value, description }: Props) {
         />
       </div>
 
-      {description && (
-        <p className="mt-2 text-xs text-muted-foreground">{description}</p>
-      )}
+      {description && <p className="mt-2 text-xs text-muted-foreground">{description}</p>}
     </div>
   );
 }

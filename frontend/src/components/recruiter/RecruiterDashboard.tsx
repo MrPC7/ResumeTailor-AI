@@ -15,10 +15,7 @@ type Props = {
 
 export function RecruiterDashboard({ evaluation, className }: Props) {
   return (
-    <section
-      className={cn("space-y-6", className)}
-      aria-label="Recruiter Review Dashboard"
-    >
+    <section className={cn("space-y-6", className)} aria-label="Recruiter Review Dashboard">
       {/* Top row: confidence scores + match level */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <RecruiterConfidenceCard

@@ -15,17 +15,12 @@ export function BeforeAfterComparison({ result, className }: Props) {
   const { before, after, improvement } = result;
 
   return (
-    <section
-      className={cn("space-y-6", className)}
-      aria-label="Before vs After Comparison"
-    >
+    <section className={cn("space-y-6", className)} aria-label="Before vs After Comparison">
       {/* Improvement summary banner */}
       <div
         className={cn(
           "rounded-lg border p-4 text-center",
-          improvement.improved
-            ? "border-emerald-200 bg-emerald-50"
-            : "border-slate-200 bg-slate-50"
+          improvement.improved ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50"
         )}
         role="status"
         aria-live="polite"
@@ -38,7 +33,7 @@ export function BeforeAfterComparison({ result, className }: Props) {
         >
           {improvement.improved
             ? `Resume optimization improved your profile by +${improvement.hiring_confidence_delta} points`
-            : "No significant improvement detected — consider additional tailoring"}
+            : "No significant improvement detected â€” consider additional tailoring"}
         </p>
       </div>
 

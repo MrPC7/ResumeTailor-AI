@@ -36,43 +36,28 @@ export function ComparisonMatchLevel({ before, after }: Props) {
       className="rounded-lg border bg-card p-4 shadow-sm"
       aria-label={`Match level changed from ${matchLevelLabel(before)} to ${matchLevelLabel(after)}`}
     >
-      <h3 className="text-sm font-medium text-muted-foreground">
-        Match Level
-      </h3>
+      <h3 className="text-sm font-medium text-muted-foreground">Match Level</h3>
       <div className="mt-3 flex items-center justify-center gap-3">
         <span
-          className={cn(
-            "rounded-full px-3 py-1 text-sm font-semibold",
-            matchLevelColor(before)
-          )}
+          className={cn("rounded-full px-3 py-1 text-sm font-semibold", matchLevelColor(before))}
         >
           {matchLevelLabel(before)}
         </span>
 
         <span
-          className={cn(
-            "text-lg",
-            changed ? "text-emerald-600" : "text-slate-400"
-          )}
+          className={cn("text-lg", changed ? "text-emerald-600" : "text-slate-400")}
           aria-hidden="true"
         >
-          →
+          â†’
         </span>
 
         <span
-          className={cn(
-            "rounded-full px-3 py-1 text-sm font-semibold",
-            matchLevelColor(after)
-          )}
+          className={cn("rounded-full px-3 py-1 text-sm font-semibold", matchLevelColor(after))}
         >
           {matchLevelLabel(after)}
         </span>
 
-        {changed && (
-          <span className="ml-2 text-xs font-medium text-emerald-600">
-            ↑ Improved
-          </span>
-        )}
+        {changed && <span className="ml-2 text-xs font-medium text-emerald-600">â†‘ Improved</span>}
       </div>
     </div>
   );

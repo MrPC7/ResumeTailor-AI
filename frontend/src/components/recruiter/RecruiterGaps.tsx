@@ -1,7 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-
 type Props = {
   gaps: string[];
 };
@@ -19,16 +17,11 @@ export function RecruiterGaps({ gaps }: Props) {
           !
         </span>
         Skill Gaps
-        <span className="ml-auto text-xs text-red-600 font-semibold">
-          {gaps.length}
-        </span>
+        <span className="ml-auto text-xs font-semibold text-red-600">{gaps.length}</span>
       </h3>
       <ul className="mt-3 space-y-2" role="list" aria-label="Skill gaps identified by recruiter">
         {gaps.map((gap, idx) => (
-          <li
-            key={idx}
-            className="flex items-start gap-2 text-sm text-foreground"
-          >
+          <li key={idx} className="flex items-start gap-2 text-sm text-foreground">
             <span
               className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-red-500"
               aria-hidden="true"

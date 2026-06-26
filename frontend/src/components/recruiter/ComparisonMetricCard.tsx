@@ -70,12 +70,8 @@ export function ComparisonMetricCard({ label, before, after, delta }: Props) {
       <div className="mt-4 grid grid-cols-2 gap-4">
         {/* Before */}
         <div className="text-center">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">
-            Before
-          </p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-slate-600">
-            {displayedBefore}
-          </p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Before</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-slate-600">{displayedBefore}</p>
           <div
             className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted"
             role="progressbar"
@@ -96,12 +92,8 @@ export function ComparisonMetricCard({ label, before, after, delta }: Props) {
 
         {/* After */}
         <div className="text-center">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">
-            After
-          </p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-600">
-            {displayedAfter}
-          </p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">After</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-600">{displayedAfter}</p>
           <div
             className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted"
             role="progressbar"

@@ -73,13 +73,8 @@ export function RecruiterMatchBadge({ matchLevel }: Props) {
     >
       <p className="text-xs font-medium text-muted-foreground">Match Level</p>
       <div className="mt-2 flex items-center gap-2">
-        <span
-          className={cn("h-3 w-3 rounded-full", config.dotClass)}
-          aria-hidden="true"
-        />
-        <span className={cn("text-lg font-bold", config.textClass)}>
-          {config.label}
-        </span>
+        <span className={cn("h-3 w-3 rounded-full", config.dotClass)} aria-hidden="true" />
+        <span className={cn("text-lg font-bold", config.textClass)}>{config.label}</span>
       </div>
     </div>
   );
