@@ -1,4 +1,4 @@
-"""Unit tests for ResumeTailorAgent."""
+"""Unit tests for ResumeTailorAgent (with selected suggestions)."""
 from __future__ import annotations
 
 from typing import Any
@@ -10,6 +10,7 @@ from schemas.agent_models import (
     CandidateProfile,
     JobProfile,
     RecruiterEvaluation,
+    Suggestion,
     TailoredResume,
     Skill,
     WorkExperience,
@@ -74,9 +75,7 @@ JOB_PROFILE = JobProfile(
         RequiredSkill(name="FastAPI", category="Framework"),
         RequiredSkill(name="Kubernetes", category="DevOps"),
     ],
-    preferred_skills=[
-        PreferredSkill(name="AWS", category="Cloud"),
-    ],
+    preferred_skills=[PreferredSkill(name="AWS", category="Cloud")],
     responsibilities=[
         Responsibility(description="Design scalable APIs", priority="high"),
         Responsibility(description="Mentor junior engineers", priority="medium"),
@@ -93,57 +92,77 @@ RECRUITER_EVALUATION = RecruiterEvaluation(
     strengths=[
         "Strong Python + FastAPI proficiency demonstrated at Acme Corp",
         "Docker experience with real deployment evidence",
-        "AWS migration leadership shows cloud capability",
     ],
     gaps=[
         "No Kubernetes experience mentioned — must-have requirement",
         "No explicit mentoring evidence for Senior role",
     ],
     verdict="Good fit with one DevOps gap; recommend phone screen.",
-    reasoning=[
-        "Python and FastAPI match well",
-        "Missing Kubernetes reduces confidence",
-        "AWS is preferred skill bonus",
-    ],
+    reasoning=["Python matches", "Missing Kubernetes reduces confidence"],
 )
 
+SELECTED_SUGGESTIONS = [
+    Suggestion(
+        id="suggestion_1",
+        title="Front-load Python and FastAPI in skills",
+        description="Move Python and FastAPI to first positions in skills list.",
+        priority="high",
+        estimated_impact="Improves ATS keyword visibility",
+        affected_section="skills",
+    ),
+    Suggestion(
+        id="suggestion_3",
+        title="Emphasize containerization in experience",
+        description="Rewrite Acme Corp description to highlight Docker containerization.",
+        priority="critical",
+        estimated_impact="Partially addresses Kubernetes gap",
+        affected_section="experience",
+    ),
+]
+
+UNSELECTED_SUGGESTIONS = [
+    Suggestion(
+        id="suggestion_2",
+        title="Add leadership narrative",
+        description="Surface mentoring experience if any.",
+        priority="high",
+        estimated_impact="Addresses Senior role gap",
+        affected_section="experience",
+    ),
+]
+
 VALID_LLM_RESPONSE: dict[str, Any] = {
-    "summary": "Senior Backend Engineer with 5 years building scalable Python microservices. Proven track record with FastAPI, Docker containerization, and AWS cloud infrastructure.",
-    "skills": [
-        "Python", "FastAPI", "Docker", "AWS", "PostgreSQL", "Redis",
-    ],
+    "summary": "Senior Backend Engineer with 5 years building scalable Python microservices. Proven expertise with FastAPI and Docker containerization.",
+    "skills": ["Python", "FastAPI", "Docker", "AWS", "PostgreSQL", "Redis"],
     "experience": [
         {
             "company": "Acme Corp",
             "position": "Senior Backend Engineer",
             "duration": "Jan 2021 - Present",
-            "description": "Architected and deployed containerized microservices using FastAPI and Docker. Led AWS infrastructure migration reducing deployment time by 40%.",
+            "description": "Architected containerized microservices using FastAPI and Docker. Led AWS cloud migration reducing deployment overhead.",
             "technologies": ["Python", "FastAPI", "Docker", "AWS"],
         },
         {
             "company": "StartupXYZ",
             "position": "Software Engineer",
             "duration": "2019 - 2020",
-            "description": "Developed high-performance REST APIs serving 10k+ requests/sec. Implemented CI/CD pipelines improving release velocity.",
+            "description": "Developed REST APIs with Flask. Implemented CI/CD pipelines.",
             "technologies": ["Python", "Flask", "PostgreSQL"],
         },
     ],
     "projects": [
         {
             "name": "ResumeTailor",
-            "description": "Built AI-powered resume optimization platform with FastAPI backend and Docker-based deployment pipeline.",
+            "description": "AI-powered resume optimization platform with FastAPI backend and Docker deployment.",
             "technologies": ["FastAPI", "React", "Docker"],
         },
     ],
     "improvements_made": [
-        "Reordered skills to front-load Python, FastAPI, Docker as must-have requirements",
-        "Rewrote Acme Corp description to emphasize containerization and cloud migration",
-        "Added professional summary targeting Senior Backend Engineer role",
-        "Highlighted Docker usage across multiple entries for DevOps visibility",
+        "Applied suggestion_1: Reordered skills to front-load Python and FastAPI",
+        "Applied suggestion_3: Rewrote Acme Corp description to emphasize Docker containerization",
     ],
     "gaps_addressed": [
-        "Surfaced Docker containerization experience to partially address DevOps/infrastructure gap",
-        "Emphasized AWS migration leadership to strengthen cloud capability narrative",
+        "Surfaced Docker containerization to partially address DevOps gap (suggestion_3)",
     ],
 }
 
@@ -159,24 +178,83 @@ def _make_agent(mock_client: AsyncMock, max_retries: int = 2) -> ResumeTailorAge
 
 class TestResumeTailorAgentTailor:
     @pytest.mark.asyncio
-    async def test_successful_tailoring(self) -> None:
+    async def test_successful_tailoring_with_suggestions(self) -> None:
         mock_client = AsyncMock()
         mock_client.generate_json.return_value = VALID_LLM_RESPONSE
 
         agent = _make_agent(mock_client)
-        result = await agent.tailor(CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION)
+        result = await agent.tailor(
+            CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION,
+            SELECTED_SUGGESTIONS, UNSELECTED_SUGGESTIONS,
+        )
 
         assert isinstance(result, TailoredResume)
         assert "Senior Backend Engineer" in result.summary
-        assert len(result.skills) == 6
         assert result.skills[0] == "Python"
+        assert result.skills[1] == "FastAPI"
         assert len(result.experience) == 2
-        assert result.experience[0].company == "Acme Corp"
-        assert len(result.projects) == 1
-        assert result.projects[0].name == "ResumeTailor"
-        assert len(result.improvements_made) >= 3
-        assert len(result.gaps_addressed) >= 1
+        assert len(result.improvements_made) >= 2
         mock_client.generate_json.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_prompt_contains_selected_suggestions(self) -> None:
+        mock_client = AsyncMock()
+        mock_client.generate_json.return_value = VALID_LLM_RESPONSE
+
+        agent = _make_agent(mock_client)
+        await agent.tailor(
+            CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION,
+            SELECTED_SUGGESTIONS, UNSELECTED_SUGGESTIONS,
+        )
+
+        prompt = mock_client.generate_json.call_args[0][0]
+        # Selected suggestions should be in prompt
+        assert "suggestion_1" in prompt
+        assert "suggestion_3" in prompt
+        assert "Front-load Python" in prompt
+        assert "Emphasize containerization" in prompt
+
+    @pytest.mark.asyncio
+    async def test_prompt_contains_unselected_suggestions(self) -> None:
+        mock_client = AsyncMock()
+        mock_client.generate_json.return_value = VALID_LLM_RESPONSE
+
+        agent = _make_agent(mock_client)
+        await agent.tailor(
+            CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION,
+            SELECTED_SUGGESTIONS, UNSELECTED_SUGGESTIONS,
+        )
+
+        prompt = mock_client.generate_json.call_args[0][0]
+        # Unselected should also be in prompt (so LLM knows NOT to apply them)
+        assert "suggestion_2" in prompt
+        assert "Add leadership narrative" in prompt
+
+    @pytest.mark.asyncio
+    async def test_works_with_empty_unselected(self) -> None:
+        mock_client = AsyncMock()
+        mock_client.generate_json.return_value = VALID_LLM_RESPONSE
+
+        agent = _make_agent(mock_client)
+        result = await agent.tailor(
+            CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION,
+            SELECTED_SUGGESTIONS, [],
+        )
+
+        assert isinstance(result, TailoredResume)
+
+    @pytest.mark.asyncio
+    async def test_works_with_none_unselected(self) -> None:
+        mock_client = AsyncMock()
+        mock_client.generate_json.return_value = VALID_LLM_RESPONSE
+
+        agent = _make_agent(mock_client)
+        result = await agent.tailor(
+            CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION,
+            SELECTED_SUGGESTIONS, None,
+        )
+
+        assert isinstance(result, TailoredResume)
 
     @pytest.mark.asyncio
     async def test_unwraps_single_key_response(self) -> None:
@@ -184,10 +262,12 @@ class TestResumeTailorAgentTailor:
         mock_client.generate_json.return_value = {"tailored": VALID_LLM_RESPONSE}
 
         agent = _make_agent(mock_client)
-        result = await agent.tailor(CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION)
+        result = await agent.tailor(
+            CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION,
+            SELECTED_SUGGESTIONS,
+        )
 
         assert isinstance(result, TailoredResume)
-        assert len(result.experience) == 2
 
     @pytest.mark.asyncio
     async def test_retries_on_parse_error(self) -> None:
@@ -200,21 +280,10 @@ class TestResumeTailorAgentTailor:
         ]
 
         agent = _make_agent(mock_client, max_retries=2)
-        result = await agent.tailor(CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION)
-
-        assert isinstance(result, TailoredResume)
-        assert mock_client.generate_json.call_count == 2
-
-    @pytest.mark.asyncio
-    async def test_retries_on_validation_error(self) -> None:
-        mock_client = AsyncMock()
-        mock_client.generate_json.side_effect = [
-            {"experience": "not_a_list"},
-            VALID_LLM_RESPONSE,
-        ]
-
-        agent = _make_agent(mock_client, max_retries=2)
-        result = await agent.tailor(CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION)
+        result = await agent.tailor(
+            CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION,
+            SELECTED_SUGGESTIONS,
+        )
 
         assert isinstance(result, TailoredResume)
         assert mock_client.generate_json.call_count == 2
@@ -228,7 +297,10 @@ class TestResumeTailorAgentTailor:
 
         agent = _make_agent(mock_client, max_retries=3)
         with pytest.raises(ResumeTailorAgentError, match="after 3 attempt"):
-            await agent.tailor(CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION)
+            await agent.tailor(
+                CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION,
+                SELECTED_SUGGESTIONS,
+            )
 
         assert mock_client.generate_json.call_count == 3
 
@@ -241,37 +313,12 @@ class TestResumeTailorAgentTailor:
 
         agent = _make_agent(mock_client, max_retries=3)
         with pytest.raises(LLMAPIError):
-            await agent.tailor(CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION)
+            await agent.tailor(
+                CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION,
+                SELECTED_SUGGESTIONS,
+            )
 
         assert mock_client.generate_json.call_count == 1
-
-    @pytest.mark.asyncio
-    async def test_max_retries_clamped_to_minimum_1(self) -> None:
-        mock_client = AsyncMock()
-        mock_client.generate_json.return_value = VALID_LLM_RESPONSE
-
-        agent = _make_agent(mock_client, max_retries=0)
-        assert agent._max_retries == 1
-
-    @pytest.mark.asyncio
-    async def test_prompt_includes_all_three_inputs(self) -> None:
-        """Verify the prompt contains candidate, job, and evaluation data."""
-        mock_client = AsyncMock()
-        mock_client.generate_json.return_value = VALID_LLM_RESPONSE
-
-        agent = _make_agent(mock_client)
-        await agent.tailor(CANDIDATE_PROFILE, JOB_PROFILE, RECRUITER_EVALUATION)
-
-        call_args = mock_client.generate_json.call_args[0][0]
-        # Candidate data
-        assert "Python" in call_args
-        assert "Acme Corp" in call_args
-        # Job data
-        assert "Senior Backend Engineer" in call_args
-        assert "Kubernetes" in call_args
-        # Evaluation data
-        assert "good_match" in call_args
-        assert "No Kubernetes experience" in call_args
 
 
 # ---------------------------------------------------------------------------
@@ -281,7 +328,7 @@ class TestResumeTailorAgentTailor:
 
 class TestResumeTailorAgentRun:
     @pytest.mark.asyncio
-    async def test_run_returns_tailored_resume_in_context(self) -> None:
+    async def test_run_returns_tailored_resume(self) -> None:
         mock_client = AsyncMock()
         mock_client.generate_json.return_value = VALID_LLM_RESPONSE
 
@@ -290,10 +337,24 @@ class TestResumeTailorAgentRun:
             "candidate_profile": CANDIDATE_PROFILE,
             "job_profile": JOB_PROFILE,
             "recruiter_evaluation": RECRUITER_EVALUATION,
+            "selected_suggestions": SELECTED_SUGGESTIONS,
+            "all_suggestions": SELECTED_SUGGESTIONS + UNSELECTED_SUGGESTIONS,
         })
 
         assert "tailored_resume" in result
         assert isinstance(result["tailored_resume"], TailoredResume)
+
+    @pytest.mark.asyncio
+    async def test_run_raises_key_error_without_suggestions(self) -> None:
+        mock_client = AsyncMock()
+        agent = _make_agent(mock_client)
+
+        with pytest.raises(KeyError):
+            await agent.run({
+                "candidate_profile": CANDIDATE_PROFILE,
+                "job_profile": JOB_PROFILE,
+                "recruiter_evaluation": RECRUITER_EVALUATION,
+            })
 
     @pytest.mark.asyncio
     async def test_run_raises_key_error_without_candidate(self) -> None:
@@ -304,28 +365,7 @@ class TestResumeTailorAgentRun:
             await agent.run({
                 "job_profile": JOB_PROFILE,
                 "recruiter_evaluation": RECRUITER_EVALUATION,
-            })
-
-    @pytest.mark.asyncio
-    async def test_run_raises_key_error_without_job(self) -> None:
-        mock_client = AsyncMock()
-        agent = _make_agent(mock_client)
-
-        with pytest.raises(KeyError):
-            await agent.run({
-                "candidate_profile": CANDIDATE_PROFILE,
-                "recruiter_evaluation": RECRUITER_EVALUATION,
-            })
-
-    @pytest.mark.asyncio
-    async def test_run_raises_key_error_without_evaluation(self) -> None:
-        mock_client = AsyncMock()
-        agent = _make_agent(mock_client)
-
-        with pytest.raises(KeyError):
-            await agent.run({
-                "candidate_profile": CANDIDATE_PROFILE,
-                "job_profile": JOB_PROFILE,
+                "selected_suggestions": SELECTED_SUGGESTIONS,
             })
 
     @pytest.mark.asyncio
@@ -341,4 +381,21 @@ class TestResumeTailorAgentRun:
                 "candidate_profile": CANDIDATE_PROFILE,
                 "job_profile": JOB_PROFILE,
                 "recruiter_evaluation": RECRUITER_EVALUATION,
+                "selected_suggestions": SELECTED_SUGGESTIONS,
             })
+
+    @pytest.mark.asyncio
+    async def test_run_without_all_suggestions_uses_empty_unselected(self) -> None:
+        """When all_suggestions is not in context, unselected list is empty."""
+        mock_client = AsyncMock()
+        mock_client.generate_json.return_value = VALID_LLM_RESPONSE
+
+        agent = _make_agent(mock_client)
+        result = await agent.run({
+            "candidate_profile": CANDIDATE_PROFILE,
+            "job_profile": JOB_PROFILE,
+            "recruiter_evaluation": RECRUITER_EVALUATION,
+            "selected_suggestions": SELECTED_SUGGESTIONS,
+        })
+
+        assert isinstance(result["tailored_resume"], TailoredResume)

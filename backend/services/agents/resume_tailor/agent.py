@@ -1,4 +1,4 @@
-"""Resume Tailor agent — rewrites resume guided by recruiter evaluation."""
+"""Resume Tailor agent — rewrites resume by applying selected suggestions."""
 from __future__ import annotations
 
 import json
@@ -11,6 +11,7 @@ from schemas.agent_models import (
     CandidateProfile,
     JobProfile,
     RecruiterEvaluation,
+    Suggestion,
     TailoredResume,
 )
 from services.agents.base import BaseAgent
@@ -25,11 +26,11 @@ class ResumeTailorAgentError(Exception):
 
 
 class ResumeTailorAgent(BaseAgent):
-    """Rewrites resume content to maximize relevance, clarity, and
-    recruiter visibility for a specific job.
+    """Rewrites resume content by applying ONLY the user-selected suggestions.
 
-    Uses the recruiter evaluation to amplify strengths and address gaps
-    while strictly preserving factual accuracy and identity.
+    Uses the recruiter evaluation for context but only applies changes
+    that correspond to explicitly selected suggestions.
+    Strictly preserves identity, chronology, and factual accuracy.
     """
 
     def __init__(self, client: LLMClient, max_retries: int = 2) -> None:
@@ -45,6 +46,7 @@ class ResumeTailorAgent(BaseAgent):
             - 'candidate_profile' (CandidateProfile)
             - 'job_profile' (JobProfile)
             - 'recruiter_evaluation' (RecruiterEvaluation)
+            - 'selected_suggestions' (list[Suggestion])
 
         Returns
         -------
@@ -53,7 +55,12 @@ class ResumeTailorAgent(BaseAgent):
         candidate: CandidateProfile = context["candidate_profile"]
         job: JobProfile = context["job_profile"]
         evaluation: RecruiterEvaluation = context["recruiter_evaluation"]
-        tailored = await self.tailor(candidate, job, evaluation)
+        selected: list[Suggestion] = context["selected_suggestions"]
+        all_suggestions: list[Suggestion] = context.get("all_suggestions", [])
+
+        unselected = [s for s in all_suggestions if s not in selected]
+
+        tailored = await self.tailor(candidate, job, evaluation, selected, unselected)
         return {"tailored_resume": tailored}
 
     async def tailor(
@@ -61,13 +68,21 @@ class ResumeTailorAgent(BaseAgent):
         candidate: CandidateProfile,
         job: JobProfile,
         evaluation: RecruiterEvaluation,
+        selected_suggestions: list[Suggestion],
+        unselected_suggestions: list[Suggestion] | None = None,
     ) -> TailoredResume:
-        """Rewrite resume guided by recruiter evaluation with retry logic."""
+        """Rewrite resume applying only selected suggestions, with retry logic."""
         prompt = prompt_builder.build(
             PromptType.RESUME_TAILORING,
             candidate_json=json.dumps(candidate.model_dump(), indent=2),
             job_json=json.dumps(job.model_dump(), indent=2),
             evaluation_json=json.dumps(evaluation.model_dump(), indent=2),
+            selected_suggestions_json=json.dumps(
+                [s.model_dump() for s in selected_suggestions], indent=2
+            ),
+            unselected_suggestions_json=json.dumps(
+                [s.model_dump() for s in (unselected_suggestions or [])], indent=2
+            ),
         ).to_single_prompt()
 
         last_error: Exception | None = None
