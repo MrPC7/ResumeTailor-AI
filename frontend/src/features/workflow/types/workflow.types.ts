@@ -1,4 +1,4 @@
-export type WorkflowStep = "upload" | "jd" | "ats" | "recommendations" | "preview" | "download";
+export type WorkflowStep = "upload" | "jd" | "recruiter" | "preview" | "download";
 
 export type ExperienceItem = {
   company: string;
@@ -119,4 +119,34 @@ export type CoverLetterData = {
   coverLetter: string;
   strengthsHighlighted: string[];
   matchingSkillsUsed: string[];
+};
+
+export type RecruiterStepData = {
+  candidateProfile: {
+    skills: { name: string; category: string }[];
+    work_experience: {
+      company: string;
+      position: string;
+      duration: string;
+      responsibilities: string[];
+      technologies: string[];
+    }[];
+    total_years_experience: number | null;
+    primary_domain: string;
+  };
+  jobProfile: {
+    role: string;
+    seniority: string;
+    must_have_skills: { name: string; category: string }[];
+    preferred_skills: { name: string; category: string }[];
+  };
+  evaluation: {
+    match_level: string;
+    hiring_confidence: number;
+    interview_probability: number;
+    strengths: string[];
+    gaps: string[];
+    verdict: string;
+    reasoning: string[];
+  };
 };

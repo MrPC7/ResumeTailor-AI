@@ -10,6 +10,7 @@ from services.orchestrator.evaluation_pipeline import (
     EvaluationPipeline,
     PipelineError,
     PipelineInputError,
+    PipelineTimeoutError,
 )
 
 router = APIRouter(tags=["evaluate"])
@@ -33,6 +34,11 @@ async def evaluate(request: Request, body: EvaluateRequest) -> EvaluateResponse:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
+        ) from exc
+    except PipelineTimeoutError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Evaluation timed out. Please try again.",
         ) from exc
     except PipelineError as exc:
         message = str(exc).lower()

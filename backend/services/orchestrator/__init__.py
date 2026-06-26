@@ -6,6 +6,8 @@ from services.orchestrator.evaluation_pipeline import (
     EvaluationResult,
     PipelineError,
     PipelineInputError,
+    PipelineTimeoutError,
+    PIPELINE_VERSION,
 )
 
 __all__ = [
@@ -13,4 +15,6 @@ __all__ = [
     "EvaluationResult",
     "PipelineError",
     "PipelineInputError",
+    "PipelineTimeoutError",
+    "PIPELINE_VERSION",
 ]
