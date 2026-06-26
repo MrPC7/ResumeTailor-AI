@@ -324,3 +324,62 @@ class RecruiterEvaluation(BaseModel):
             except ValueError:
                 return 0
         return 0
+
+
+# ---------------------------------------------------------------------------
+# Tailored Resume — output of ResumeTailorAgent
+# ---------------------------------------------------------------------------
+
+
+class TailoredExperience(BaseModel):
+    """A rewritten work-experience entry optimized for the target role."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    company: str = ""
+    position: str = ""
+    duration: str = ""
+    description: str = ""
+    technologies: list[str] = []
+
+    @field_validator("company", "position", "duration", "description", mode="before")
+    @classmethod
+    def coerce_strings(cls, v: object) -> str:
+        return _coerce_str(v)
+
+
+class TailoredProject(BaseModel):
+    """A rewritten project entry optimized for the target role."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    name: str = ""
+    description: str = ""
+    technologies: list[str] = []
+
+    @field_validator("name", "description", mode="before")
+    @classmethod
+    def coerce_strings(cls, v: object) -> str:
+        return _coerce_str(v)
+
+
+class TailoredResume(BaseModel):
+    """Structured output of the ResumeTailorAgent.
+
+    Contains the rewritten resume optimized for the target role based on
+    recruiter evaluation gaps and strengths.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    summary: str = ""
+    skills: list[str] = Field(default_factory=list)
+    experience: list[TailoredExperience] = Field(default_factory=list)
+    projects: list[TailoredProject] = Field(default_factory=list)
+    improvements_made: list[str] = Field(default_factory=list)
+    gaps_addressed: list[str] = Field(default_factory=list)
+
+    @field_validator("summary", mode="before")
+    @classmethod
+    def coerce_summary(cls, v: object) -> str:
+        return _coerce_str(v)

@@ -542,6 +542,105 @@ Job Requirements:
 
 
 # ---------------------------------------------------------------------------
+# Resume Tailoring (v2 multi-agent)
+# ---------------------------------------------------------------------------
+_RESUME_TAILORING_SYSTEM = (
+    "You are an expert resume writer and career strategist. "
+    "Your task is to rewrite a resume to maximize relevance, clarity, and recruiter visibility "
+    "for a specific job — guided by a recruiter's evaluation of the candidate. "
+    "You must NEVER invent, fabricate, or hallucinate any experience, skill, or achievement. "
+    "Return ONLY a valid JSON object. "
+    "Do not include markdown code fences, backticks, or any text outside the JSON object."
+)
+
+_RESUME_TAILORING_USER = """\
+Rewrite this resume to maximize its fit for the target job, guided by the recruiter evaluation.
+
+═══════════════════════════════════════════
+ABSOLUTE INTEGRITY RULES — VIOLATION = FAILURE
+═══════════════════════════════════════════
+
+1. NEVER invent, fabricate, or hallucinate:
+   - Work experience, job titles, companies, or employment durations
+   - Projects that do not exist in the candidate profile
+   - Skills, tools, or technologies not present in the candidate profile
+   - Certifications, degrees, institutions, or achievements not in the candidate profile
+   - Metrics, numbers, or results that are not in the original data
+2. NEVER change identity fields: company, position, duration, institution, degree, year, project name, project technologies.
+3. You may ONLY:
+   - Rewrite the summary to target the specific role
+   - Rewrite experience descriptions to emphasize JD-relevant aspects using EXISTING facts
+   - Rewrite project descriptions to highlight JD-relevant technologies and impact
+   - Reorder skills so JD-relevant and must-have skills appear first
+   - Incorporate ATS keywords into existing descriptions WHERE factually accurate
+   - Address recruiter-identified GAPS by surfacing existing but underemphasized evidence
+
+═══════════════════════════════════════════
+OPTIMIZATION TARGETS
+═══════════════════════════════════════════
+
+1. RELEVANCE — Prioritize content that directly addresses must-have skills and responsibilities from the job profile.
+2. CLARITY — Use concise, action-oriented language. One achievement per bullet. No filler.
+3. RECRUITER VISIBILITY — Front-load the most relevant information. Address recruiter-identified strengths prominently and gaps where possible with existing evidence.
+
+═══════════════════════════════════════════
+RECRUITER GUIDANCE
+═══════════════════════════════════════════
+
+Use the recruiter evaluation to guide your rewrites:
+- STRENGTHS: Amplify these in the tailored resume — make them impossible to miss.
+- GAPS: Where the candidate has ANY existing evidence that partially addresses a gap, surface it clearly. If no evidence exists, do NOT fabricate — just optimize what's available.
+
+═══════════════════════════════════════════
+
+Required JSON structure:
+{{
+  "summary": "2-3 sentence professional summary targeting the specific role, using only facts from the candidate profile",
+  "skills": ["Reordered skill list — must-have JD skills first, then preferred, then remaining. NO new skills added."],
+  "experience": [
+    {{
+      "company": "unchanged",
+      "position": "unchanged",
+      "duration": "unchanged",
+      "description": "Rewritten to emphasize JD-relevant achievements using EXISTING facts only. Concise, action-oriented. Max 3 sentences.",
+      "technologies": ["Technologies from this role — unchanged list"]
+    }}
+  ],
+  "projects": [
+    {{
+      "name": "unchanged",
+      "description": "Rewritten to highlight JD-relevant aspects using EXISTING facts only",
+      "technologies": ["unchanged — same list as original"]
+    }}
+  ],
+  "improvements_made": [
+    "Each specific change made to the resume with reasoning (e.g. 'Reordered skills to front-load Python and FastAPI as they are must-have requirements')"
+  ],
+  "gaps_addressed": [
+    "Each recruiter-identified gap that was addressed and HOW (e.g. 'Surfaced Docker usage from Acme Corp role to partially address DevOps gap')"
+  ]
+}}
+
+Rules:
+- Preserve the EXACT same number of experience entries and project entries.
+- Do NOT add new experience or project entries.
+- skills list must contain ONLY skills already present in the candidate profile — reorder only.
+- improvements_made must document every meaningful change.
+- gaps_addressed must reference specific recruiter gaps and explain what was done.
+- If a gap cannot be addressed with existing evidence, do NOT include it in gaps_addressed.
+- Keep descriptions concise — ATS-friendly, no verbosity.
+
+Candidate Profile:
+{candidate_json}
+
+Job Profile:
+{job_json}
+
+Recruiter Evaluation:
+{evaluation_json}"""
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
@@ -576,5 +675,9 @@ PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
     PromptType.RECRUITER_EVALUATION: PromptTemplate(
         system=_RECRUITER_EVALUATION_SYSTEM,
         user_template=_RECRUITER_EVALUATION_USER,
+    ),
+    PromptType.RESUME_TAILORING: PromptTemplate(
+        system=_RESUME_TAILORING_SYSTEM,
+        user_template=_RESUME_TAILORING_USER,
     ),
 }
