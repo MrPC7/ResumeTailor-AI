@@ -383,3 +383,39 @@ class TailoredResume(BaseModel):
     @classmethod
     def coerce_summary(cls, v: object) -> str:
         return _coerce_str(v)
+
+
+# ---------------------------------------------------------------------------
+# Reevaluation Result — output of ReevaluatorAgent
+# ---------------------------------------------------------------------------
+
+
+class ImprovementMetrics(BaseModel):
+    """Deterministic delta calculations between before/after evaluations."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    hiring_confidence_delta: int = 0
+    interview_probability_delta: int = 0
+    gaps_before: int = 0
+    gaps_after: int = 0
+    gaps_reduced: int = 0
+    strengths_before: int = 0
+    strengths_after: int = 0
+    strengths_gained: int = 0
+    match_level_before: str = ""
+    match_level_after: str = ""
+    improved: bool = False
+
+
+class ReevaluationResult(BaseModel):
+    """Structured output of the ReevaluatorAgent.
+
+    Contains before/after evaluations and deterministic improvement metrics.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    before: RecruiterEvaluation
+    after: RecruiterEvaluation
+    improvement: ImprovementMetrics
