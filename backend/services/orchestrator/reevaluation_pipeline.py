@@ -9,7 +9,6 @@ from typing import Any
 
 from core.config import settings
 from schemas.agent_models import (
-    CandidateProfile,
     ImprovementMetrics,
     JobProfile,
     RecruiterEvaluation,

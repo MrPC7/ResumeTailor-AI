@@ -123,18 +123,12 @@ export function StepPreview() {
       </div>
 
       {/* Tab panels */}
-      <div
-        role="tabpanel"
-        id={`tabpanel-${activeTab}`}
-        aria-labelledby={`tab-${activeTab}`}
-      >
+      <div role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
         {activeTab === "optimized" && <ResumeView resume={customizedResume} />}
         {activeTab === "diff" && (
           <ResumeDiff original={uploadData.resume} customized={customizedResume} />
         )}
-        {activeTab === "recruiter" && (
-          <RecruiterDashboard evaluation={recruiterData.evaluation} />
-        )}
+        {activeTab === "recruiter" && <RecruiterDashboard evaluation={recruiterData.evaluation} />}
       </div>
 
       {/* Navigation */}

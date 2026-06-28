@@ -79,11 +79,7 @@ export function StepDownload() {
       </div>
 
       {/* Tab panels */}
-      <div
-        role="tabpanel"
-        id={`dl-tabpanel-${activeTab}`}
-        aria-labelledby={`dl-tab-${activeTab}`}
-      >
+      <div role="tabpanel" id={`dl-tabpanel-${activeTab}`} aria-labelledby={`dl-tab-${activeTab}`}>
         {activeTab === "resume" && (
           <div className="space-y-4">
             {/* Resume preview card */}
@@ -93,9 +89,7 @@ export function StepDownload() {
                   <FileText className="h-5 w-5 text-indigo-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {resumeName} — Optimized
-                  </p>
+                  <p className="text-sm font-semibold text-slate-900">{resumeName} — Optimized</p>
                   <p className="text-xs text-slate-500">
                     {customizedResume.skills.length} skills
                     {customizedResume.experience.length > 0 &&

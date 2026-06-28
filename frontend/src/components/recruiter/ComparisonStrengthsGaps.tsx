@@ -144,9 +144,7 @@ export function ComparisonStrengthsGaps({
           <p className="mt-3 text-xs text-muted-foreground">No gaps identified</p>
         )}
         {afterGaps.length === 0 && resolvedGaps.length > 0 && (
-          <p className="mt-3 text-xs font-medium text-emerald-600">
-            All gaps resolved!
-          </p>
+          <p className="mt-3 text-xs font-medium text-emerald-600">All gaps resolved!</p>
         )}
       </div>
     </div>
