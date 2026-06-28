@@ -165,3 +165,7 @@ export type SuggestionsStepData = {
   high_count: number;
   selectedSuggestions: Record<string, boolean>;
 };
+
+export type PreviewStepData = {
+  customizedResume: StructuredResume;
+};

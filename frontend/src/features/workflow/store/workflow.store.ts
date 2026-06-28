@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type {
   CoverLetterData,
   JDStepData,
+  PreviewStepData,
   RecruiterStepData,
   SuggestionsStepData,
   UploadStepData,
@@ -39,6 +40,7 @@ type State = {
   jdData: JDStepData | null;
   recruiterData: RecruiterStepData | null;
   suggestionsData: SuggestionsStepData | null;
+  previewData: PreviewStepData | null;
   coverLetter: CoverLetterData | null;
 };
 
@@ -53,6 +55,8 @@ type Actions = {
   completeRecruiter: (data: RecruiterStepData) => void;
   completeSuggestions: (data: SuggestionsStepData) => void;
   toggleSuggestion: (id: string) => void;
+
+  setPreviewData: (data: PreviewStepData) => void;
 
   setCoverLetter: (data: CoverLetterData) => void;
   clearCoverLetter: () => void;
@@ -89,6 +93,7 @@ const INITIAL_STATE: State = {
   jdData: null,
   recruiterData: null,
   suggestionsData: null,
+  previewData: null,
   coverLetter: null,
 };
 
@@ -156,6 +161,7 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
   completeSuggestions: (data) =>
     set((s) => ({
       suggestionsData: data,
+      previewData: null,
       coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "suggestions"),
       currentStep: nextStep("suggestions"),
@@ -174,6 +180,8 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
         },
       };
     }),
+
+  setPreviewData: (data) => set({ previewData: data }),
 
   setCoverLetter: (data) => set({ coverLetter: data }),
   clearCoverLetter: () => set({ coverLetter: null }),
