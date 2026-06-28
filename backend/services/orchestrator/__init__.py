@@ -18,6 +18,14 @@ from services.orchestrator.tailoring_pipeline import (
     TailoringTimeoutError,
     TAILORING_PIPELINE_VERSION,
 )
+from services.orchestrator.reevaluation_pipeline import (
+    ReevaluationPipeline,
+    ReevaluationPipelineError,
+    ReevaluationInputError,
+    ReevaluationTimeoutError,
+    ReevaluationResult,
+    REEVALUATION_PIPELINE_VERSION,
+)
 
 __all__ = [
     "EvaluationPipeline",
@@ -33,4 +41,10 @@ __all__ = [
     "TailoringValidationError",
     "TailoringTimeoutError",
     "TAILORING_PIPELINE_VERSION",
+    "ReevaluationPipeline",
+    "ReevaluationPipelineError",
+    "ReevaluationInputError",
+    "ReevaluationTimeoutError",
+    "ReevaluationResult",
+    "REEVALUATION_PIPELINE_VERSION",
 ]
