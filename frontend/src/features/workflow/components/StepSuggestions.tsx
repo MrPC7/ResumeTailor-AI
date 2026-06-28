@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { SuggestionList } from "@/components/suggestions";
 import { useWorkflowStore } from "@/features/workflow/store/workflow.store";
-import { fetchSuggestions } from "@/features/workflow/services/suggestions.service";
 import type { SuggestionsStepData } from "@/features/workflow/types/workflow.types";
-
-type Phase = "loading" | "ready" | "error";
 
 export function StepSuggestions() {
   const recruiterData = useWorkflowStore((s) => s.recruiterData);
@@ -16,75 +13,38 @@ export function StepSuggestions() {
   const goPrev = useWorkflowStore((s) => s.goPrev);
   const navigateTo = useWorkflowStore((s) => s.navigateTo);
 
-  const [phase, setPhase] = useState<Phase>(suggestionsData ? "ready" : "loading");
-  const startedRef = useRef(false);
+  const initializedRef = useRef(false);
 
+  // Hydrate suggestionsData from recruiterData.evaluation.suggestions (no API call)
   useEffect(() => {
-    if (suggestionsData || startedRef.current) return;
+    if (suggestionsData || initializedRef.current) return;
     if (!recruiterData) return;
 
-    startedRef.current = true;
+    initializedRef.current = true;
 
-    async function run() {
-      try {
-        const result = await fetchSuggestions(recruiterData!);
+    const suggestions = recruiterData.evaluation.suggestions ?? [];
+    const criticalCount = suggestions.filter((s) => s.priority === "critical").length;
+    const highCount = suggestions.filter((s) => s.priority === "high").length;
 
-        const stepData: SuggestionsStepData = {
-          suggestions: result.suggestions.suggestions,
-          total_count: result.suggestions.total_count,
-          critical_count: result.suggestions.critical_count,
-          high_count: result.suggestions.high_count,
-          selectedSuggestions: Object.fromEntries(
-            result.suggestions.suggestions.map((s) => [s.id, true])
-          ),
-        };
+    const stepData: SuggestionsStepData = {
+      suggestions,
+      total_count: suggestions.length,
+      critical_count: criticalCount,
+      high_count: highCount,
+      selectedSuggestions: Object.fromEntries(suggestions.map((s) => [s.id, true])),
+    };
 
-        completeSuggestions(stepData);
-        setPhase("ready");
-      } catch {
-        setPhase("error");
-      }
-    }
-
-    void run();
+    completeSuggestions(stepData);
   }, [recruiterData, suggestionsData, completeSuggestions]);
 
-  if (phase === "loading") {
+  if (!suggestionsData) {
     return (
       <div className="flex flex-col items-center justify-center py-16" aria-busy="true">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600" />
-        <p className="mt-4 text-sm text-slate-500">Generating improvement suggestions...</p>
-        <p className="mt-1 text-xs text-slate-400">Analyzing gaps and opportunities</p>
+        <p className="mt-4 text-sm text-slate-500">Loading suggestions...</p>
       </div>
     );
   }
-
-  if (phase === "error") {
-    return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-        <p className="text-sm font-medium text-red-700">
-          Failed to generate suggestions. Please try again.
-        </p>
-        <button
-          onClick={() => {
-            startedRef.current = false;
-            setPhase("loading");
-          }}
-          className="mt-4 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-        >
-          Retry
-        </button>
-        <button
-          onClick={goPrev}
-          className="ml-3 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        >
-          Go Back
-        </button>
-      </div>
-    );
-  }
-
-  if (!suggestionsData) return null;
 
   const handleSelectAll = () => {
     suggestionsData.suggestions.forEach((s) => {

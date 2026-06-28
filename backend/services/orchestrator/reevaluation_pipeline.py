@@ -14,6 +14,7 @@ from schemas.agent_models import (
     RecruiterEvaluation,
 )
 from services.agents.base import Agent
+from services.comparison_engine import comparison_engine
 
 logger = logging.getLogger(__name__)
 
@@ -162,8 +163,8 @@ class ReevaluationPipeline:
         after_ctx = await self._run_agent(self._recruiter, after_ctx, step=5)
         after_eval: RecruiterEvaluation = after_ctx["recruiter_evaluation"]
 
-        # Step 6: Compute improvement metrics
-        improvement = self._compute_improvement(before_eval, after_eval)
+        # Step 6: Compute improvement metrics (deterministic — no LLM)
+        improvement = comparison_engine.compare(before_eval, after_eval)
 
         return ReevaluationResult(
             before=before_eval,
@@ -236,23 +237,3 @@ class ReevaluationPipeline:
             raise ReevaluationInputError(
                 "raw_jd_text must be a non-empty string."
             )
-
-    def _compute_improvement(
-        self,
-        before: RecruiterEvaluation,
-        after: RecruiterEvaluation,
-    ) -> ImprovementMetrics:
-        """Deterministic calculation of improvement deltas."""
-        return ImprovementMetrics(
-            hiring_confidence_delta=after.hiring_confidence - before.hiring_confidence,
-            interview_probability_delta=after.interview_probability - before.interview_probability,
-            gaps_before=len(before.gaps),
-            gaps_after=len(after.gaps),
-            gaps_reduced=len(before.gaps) - len(after.gaps),
-            strengths_before=len(before.strengths),
-            strengths_after=len(after.strengths),
-            strengths_gained=len(after.strengths) - len(before.strengths),
-            match_level_before=before.match_level,
-            match_level_after=after.match_level,
-            improved=after.hiring_confidence > before.hiring_confidence,
-        )

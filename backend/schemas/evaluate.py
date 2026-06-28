@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from schemas.agent_models import CandidateProfile, JobProfile, RecruiterEvaluation
+from schemas.agent_models import CandidateProfile, JobProfile, RecruiterEvaluation, Suggestion
 
 
 class EvaluateRequest(BaseModel):
@@ -25,5 +25,6 @@ class EvaluateResponse(BaseModel):
     candidate_profile: CandidateProfile = Field(alias="candidateProfile")
     job_profile: JobProfile = Field(alias="jobProfile")
     evaluation: RecruiterEvaluation
+    suggestions: list[Suggestion] = Field(default_factory=list)
 
     model_config = ConfigDict(populate_by_name=True, by_alias=True)

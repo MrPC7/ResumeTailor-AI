@@ -148,6 +148,14 @@ export type RecruiterStepData = {
     gaps: string[];
     verdict: string;
     reasoning: string[];
+    suggestions: {
+      id: string;
+      title: string;
+      description: string;
+      priority: string;
+      estimated_impact: string;
+      affected_section: string;
+    }[];
   };
 };
 

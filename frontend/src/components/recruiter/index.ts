@@ -11,6 +11,7 @@ export { ComparisonGapReduction } from "./ComparisonGapReduction";
 export { ComparisonStrengthsGaps } from "./ComparisonStrengthsGaps";
 export type {
   RecruiterEvaluation,
+  RecruiterSuggestion,
   EvaluateResponse,
   ImprovementMetrics,
   ReevaluationResult,

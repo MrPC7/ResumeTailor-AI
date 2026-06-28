@@ -65,4 +65,5 @@ async def evaluate(request: Request, body: EvaluateRequest) -> EvaluateResponse:
         candidate_profile=result.candidate_profile,
         job_profile=result.job_profile,
         evaluation=result.evaluation,
+        suggestions=result.evaluation.suggestions,
     )

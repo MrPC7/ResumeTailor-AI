@@ -1,3 +1,12 @@
+export type RecruiterSuggestion = {
+  id: string;
+  title: string;
+  description: string;
+  priority: string;
+  estimated_impact: string;
+  affected_section: string;
+};
+
 export type RecruiterEvaluation = {
   match_level: string;
   hiring_confidence: number;
@@ -6,6 +15,7 @@ export type RecruiterEvaluation = {
   gaps: string[];
   verdict: string;
   reasoning: string[];
+  suggestions: RecruiterSuggestion[];
 };
 
 export type ImprovementMetrics = {
@@ -71,4 +81,5 @@ export type EvaluateResponse = {
     };
   };
   evaluation: RecruiterEvaluation;
+  suggestions: RecruiterSuggestion[];
 };

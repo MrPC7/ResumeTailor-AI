@@ -463,6 +463,16 @@ Required JSON structure:
   "verdict": "One-sentence hiring recommendation (e.g. 'Strong backend candidate, recommend immediate interview' or 'Missing core ML skills, not suitable for this role')",
   "reasoning": [
     "Step-by-step explanation of how each score was derived, referencing specific evidence"
+  ],
+  "suggestions": [
+    {{
+      "id": "suggestion_1",
+      "title": "Short actionable title (e.g. 'Front-load Python in skills section')",
+      "description": "Detailed explanation of what to change and why, referencing specific evidence from the evaluation",
+      "priority": "One of: critical, high, medium, low",
+      "estimated_impact": "Concise expected improvement statement",
+      "affected_section": "One of: summary, skills, experience, projects, education, certifications"
+    }}
   ]
 }}
 
@@ -471,6 +481,10 @@ Rules:
 - gaps must reference specific must-have requirements from the job profile that are missing.
 - reasoning must have at least 3 entries explaining the evaluation logic.
 - verdict must be a single concise sentence.
+- Generate 4-8 actionable suggestions, ordered by priority (critical first).
+- Each suggestion must be independent and implementable without others.
+- Suggestion id must be sequential: suggestion_1, suggestion_2, etc.
+- Do NOT suggest fabricating experience — only rewriting, reordering, or emphasizing existing content.
 - Do NOT include generic filler — every item must be specific and evidence-based.
 
 Candidate Profile:
@@ -582,84 +596,6 @@ Recruiter Evaluation:
 
 
 # ---------------------------------------------------------------------------
-# Suggestion Generation (v2 multi-agent)
-# ---------------------------------------------------------------------------
-_SUGGESTION_GENERATION_SYSTEM = (
-    "You are an expert career advisor and resume strategist. "
-    "Generate specific, actionable resume improvement suggestions based on evidence. "
-    "Each suggestion must be independent — implementable without depending on other suggestions. "
-    "You must NEVER suggest fabricating experience, skills, or achievements. "
-    "Return ONLY a valid JSON object. "
-    "Do not include markdown code fences, backticks, or any text outside the JSON object."
-)
-
-_SUGGESTION_GENERATION_USER = """\
-Generate actionable resume improvement suggestions for this candidate targeting the specified job.
-
-═══════════════════════════════════════════
-RULES — STRICT COMPLIANCE
-═══════════════════════════════════════════
-
-1. Every suggestion must be EVIDENCE-BASED — derived from a specific gap, missing keyword, or weakness identified in the recruiter evaluation.
-2. Suggestions must be ACTIONABLE — the candidate must be able to implement them immediately (reword, reorder, emphasize).
-3. Suggestions must be INDEPENDENT — each can be applied without the others.
-4. Do NOT suggest inventing or fabricating experience, skills, or certifications.
-5. Do NOT suggest removing factual content — only rewriting, reordering, or emphasizing.
-6. Each suggestion must target a SPECIFIC resume section.
-7. Generate between 4-8 suggestions, prioritized by impact.
-
-═══════════════════════════════════════════
-PRIORITY LEVELS
-═══════════════════════════════════════════
-
-- critical: Addresses a must-have skill gap or fundamental alignment issue
-- high: Addresses a significant weakness that directly affects hiring confidence
-- medium: Improves visibility or clarity of existing qualifications
-- low: Minor optimization or formatting improvement
-
-═══════════════════════════════════════════
-ESTIMATED IMPACT
-═══════════════════════════════════════════
-
-Describe the expected improvement concisely (e.g. "Could increase keyword match by 15-20%", "Addresses primary recruiter gap", "Improves first-impression scan time").
-
-═══════════════════════════════════════════
-
-Required JSON structure:
-{{
-  "suggestions": [
-    {{
-      "id": "suggestion_1",
-      "title": "Short actionable title (e.g. 'Front-load Python in skills section')",
-      "description": "Detailed explanation of what to change and why, referencing specific evidence from the evaluation",
-      "priority": "One of: critical, high, medium, low",
-      "estimated_impact": "Concise expected improvement statement",
-      "affected_section": "One of: summary, skills, experience, projects, education, certifications"
-    }}
-  ],
-  "total_count": <int — total number of suggestions>,
-  "critical_count": <int — number of critical priority suggestions>,
-  "high_count": <int — number of high priority suggestions>
-}}
-
-Rules:
-- id must be unique sequential (suggestion_1, suggestion_2, ...)
-- title must be concise (max 10 words)
-- description must reference specific evidence from the recruiter evaluation or job requirements
-- Do NOT include generic advice — every suggestion must be specific to THIS candidate and THIS job
-- Order suggestions by priority (critical first, then high, medium, low)
-
-Candidate Profile:
-{candidate_json}
-
-Job Requirements:
-{job_json}
-
-Recruiter Evaluation:
-{evaluation_json}"""
-
-
-# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
@@ -694,9 +630,5 @@ PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
     PromptType.RESUME_TAILORING: PromptTemplate(
         system=_RESUME_TAILORING_SYSTEM,
         user_template=_RESUME_TAILORING_USER,
-    ),
-    PromptType.SUGGESTION_GENERATION: PromptTemplate(
-        system=_SUGGESTION_GENERATION_SYSTEM,
-        user_template=_SUGGESTION_GENERATION_USER,
     ),
 }

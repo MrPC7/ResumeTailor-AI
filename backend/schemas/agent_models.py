@@ -276,6 +276,48 @@ class JobProfile(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Suggestion — actionable resume improvement suggestion
+# ---------------------------------------------------------------------------
+
+SUGGESTION_PRIORITIES = Literal["critical", "high", "medium", "low"]
+RESUME_SECTIONS = Literal[
+    "summary", "skills", "experience", "projects", "education", "certifications"
+]
+
+
+class Suggestion(BaseModel):
+    """A single actionable resume improvement suggestion."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = ""
+    title: str = ""
+    description: str = ""
+    priority: str = ""
+    estimated_impact: str = ""
+    affected_section: str = ""
+
+    @field_validator("id", "title", "description", "estimated_impact", mode="before")
+    @classmethod
+    def coerce_strings(cls, v: object) -> str:
+        return _coerce_str(v)
+
+    @field_validator("priority", mode="before")
+    @classmethod
+    def coerce_priority(cls, v: object) -> str:
+        raw = _coerce_str(v).strip().lower()
+        valid = {"critical", "high", "medium", "low"}
+        return raw if raw in valid else "medium"
+
+    @field_validator("affected_section", mode="before")
+    @classmethod
+    def coerce_section(cls, v: object) -> str:
+        raw = _coerce_str(v).strip().lower()
+        valid = {"summary", "skills", "experience", "projects", "education", "certifications"}
+        return raw if raw in valid else raw
+
+
+# ---------------------------------------------------------------------------
 # Recruiter Evaluation — output of RecruiterAgent
 # ---------------------------------------------------------------------------
 
@@ -285,8 +327,8 @@ MATCH_LEVELS = Literal["strong_match", "good_match", "partial_match", "weak_matc
 class RecruiterEvaluation(BaseModel):
     """Structured recruiter evaluation of a candidate against a job profile.
 
-    This is the output of the RecruiterAgent and feeds into the
-    ResumeTailorAgent and ReevaluatorAgent downstream.
+    This is the output of the RecruiterAgent and serves as the single
+    source of truth for evaluation, including actionable suggestions.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -298,6 +340,7 @@ class RecruiterEvaluation(BaseModel):
     gaps: list[str] = Field(default_factory=list)
     verdict: str = ""
     reasoning: list[str] = Field(default_factory=list)
+    suggestions: list[Suggestion] = Field(default_factory=list)
 
     @field_validator("match_level", mode="before")
     @classmethod
@@ -386,7 +429,7 @@ class TailoredResume(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Reevaluation Result — output of ReevaluatorAgent
+# Reevaluation Result — output of ComparisonEngine
 # ---------------------------------------------------------------------------
 
 
@@ -409,9 +452,9 @@ class ImprovementMetrics(BaseModel):
 
 
 class ReevaluationResult(BaseModel):
-    """Structured output of the ReevaluatorAgent.
+    """Structured comparison of before/after evaluations.
 
-    Contains before/after evaluations and deterministic improvement metrics.
+    Produced by ComparisonEngine — deterministic, no LLM.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -422,45 +465,8 @@ class ReevaluationResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Suggestion — output of SuggestionGeneratorAgent
+# SuggestionReport — convenience wrapper for collections of suggestions
 # ---------------------------------------------------------------------------
-
-SUGGESTION_PRIORITIES = Literal["critical", "high", "medium", "low"]
-RESUME_SECTIONS = Literal[
-    "summary", "skills", "experience", "projects", "education", "certifications"
-]
-
-
-class Suggestion(BaseModel):
-    """A single actionable resume improvement suggestion."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    id: str = ""
-    title: str = ""
-    description: str = ""
-    priority: str = ""
-    estimated_impact: str = ""
-    affected_section: str = ""
-
-    @field_validator("id", "title", "description", "estimated_impact", mode="before")
-    @classmethod
-    def coerce_strings(cls, v: object) -> str:
-        return _coerce_str(v)
-
-    @field_validator("priority", mode="before")
-    @classmethod
-    def coerce_priority(cls, v: object) -> str:
-        raw = _coerce_str(v).strip().lower()
-        valid = {"critical", "high", "medium", "low"}
-        return raw if raw in valid else "medium"
-
-    @field_validator("affected_section", mode="before")
-    @classmethod
-    def coerce_section(cls, v: object) -> str:
-        raw = _coerce_str(v).strip().lower()
-        valid = {"summary", "skills", "experience", "projects", "education", "certifications"}
-        return raw if raw in valid else raw
 
 
 class SuggestionReport(BaseModel):
