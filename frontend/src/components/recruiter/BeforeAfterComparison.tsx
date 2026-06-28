@@ -5,6 +5,7 @@ import type { ReevaluationResult } from "./types";
 import { ComparisonMetricCard } from "./ComparisonMetricCard";
 import { ComparisonGapReduction } from "./ComparisonGapReduction";
 import { ComparisonMatchLevel } from "./ComparisonMatchLevel";
+import { ComparisonStrengthsGaps } from "./ComparisonStrengthsGaps";
 
 type Props = {
   result: ReevaluationResult;
@@ -67,6 +68,14 @@ export function BeforeAfterComparison({ result, className }: Props) {
         strengthsBefore={improvement.strengths_before}
         strengthsAfter={improvement.strengths_after}
         strengthsGained={improvement.strengths_gained}
+      />
+
+      {/* Detailed strengths & gaps lists */}
+      <ComparisonStrengthsGaps
+        beforeStrengths={before.strengths}
+        afterStrengths={after.strengths}
+        beforeGaps={before.gaps}
+        afterGaps={after.gaps}
       />
     </section>
   );

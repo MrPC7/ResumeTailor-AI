@@ -8,6 +8,7 @@ export { BeforeAfterComparison } from "./BeforeAfterComparison";
 export { ComparisonMetricCard } from "./ComparisonMetricCard";
 export { ComparisonMatchLevel } from "./ComparisonMatchLevel";
 export { ComparisonGapReduction } from "./ComparisonGapReduction";
+export { ComparisonStrengthsGaps } from "./ComparisonStrengthsGaps";
 export type {
   RecruiterEvaluation,
   EvaluateResponse,
