@@ -53,8 +53,26 @@ class ResumeCustomizer:
     async def customize(self, payload: CustomizeResumeRequest) -> CustomizeResumeResponse:
         resume_json = json.dumps(payload.resume.model_dump(), indent=2)
         jd_json = json.dumps(payload.jd.model_dump(), indent=2)
-        accepted_json = json.dumps(payload.accepted_recommendations, indent=2)
-        rejected_json = json.dumps(payload.rejected_recommendations, indent=2)
+        selected_ids = set(payload.selected_suggestion_ids)
+        selected_suggestions = [
+            suggestion.model_dump()
+            for suggestion in payload.suggestions
+            if suggestion.id in selected_ids
+        ]
+        unselected_ids = [
+            suggestion.id
+            for suggestion in payload.suggestions
+            if suggestion.id not in selected_ids
+        ]
+        accepted_json = json.dumps(selected_suggestions, indent=2)
+        rejected_json = json.dumps(unselected_ids, indent=2)
+
+        if not selected_suggestions:
+            return CustomizeResumeResponse(
+                customizedResume=payload.resume,
+                suggestions=[],
+                compressed=False,
+            )
 
         prompt = prompt_builder.build(
             PromptType.RESUME_CUSTOMIZATION,
@@ -62,6 +80,7 @@ class ResumeCustomizer:
             jd_json=jd_json,
             accepted_json=accepted_json,
             rejected_json=rejected_json,
+            selected_suggestion_ids_json=json.dumps(payload.selected_suggestion_ids, indent=2),
         ).to_single_prompt()
 
         last_error: Exception | None = None

@@ -120,13 +120,13 @@ _RESUME_CUSTOMIZATION_SYSTEM = (
 )
 
 _RESUME_CUSTOMIZATION_USER = """\
-Apply ONLY the accepted recommendations below to tailor this resume for the target job.
+Apply ONLY the suggestions whose IDs are listed in selectedSuggestionIds to tailor this resume for the target job.
 
 ═══════════════════════════════════════════
 ABSOLUTE INTEGRITY RULES — VIOLATION = FAILURE
 ═══════════════════════════════════════════
 
-1. NEVER apply any recommendation from the REJECTED list.
+1. NEVER apply any suggestion whose ID is absent from selectedSuggestionIds.
 2. NEVER invent, fabricate, or hallucinate:
    - Work experience, job titles, companies, or employment durations
    - Projects that do not exist in the original resume
@@ -155,12 +155,17 @@ LENGTH PRESERVATION RULES — CRITICAL
 12. Summary should be ≤ 2 sentences.
 
 ═══════════════════════════════════════════
-ACCEPTED RECOMMENDATIONS (apply these)
+selectedSuggestionIds
+═══════════════════════════════════════════
+{selected_suggestion_ids_json}
+
+═══════════════════════════════════════════
+SELECTED SUGGESTIONS (apply only these)
 ═══════════════════════════════════════════
 {accepted_json}
 
 ═══════════════════════════════════════════
-REJECTED RECOMMENDATIONS (DO NOT apply)
+UNSELECTED SUGGESTION IDS (do not apply)
 ═══════════════════════════════════════════
 {rejected_json}
 
@@ -172,14 +177,14 @@ Required JSON structure:
     "name": "unchanged from original",
     "email": "unchanged from original",
     "phone": "unchanged from original",
-    "summary": "rewritten ONLY if an accepted recommendation requires it, otherwise unchanged",
+    "summary": "rewritten ONLY if a selected suggestion requires it, otherwise unchanged",
     "skills": ["reordered — JD-relevant skills first, NO new skills added"],
     "experience": [
       {{
         "company": "unchanged",
         "position": "unchanged",
         "duration": "unchanged",
-        "description": "rewritten ONLY to apply accepted recommendations using existing facts"
+        "description": "rewritten ONLY to apply selected suggestions using existing facts"
       }}
     ],
     "education": [
@@ -192,7 +197,7 @@ Required JSON structure:
     "projects": [
       {{
         "name": "unchanged",
-        "description": "rewritten ONLY to apply accepted recommendations using existing facts",
+        "description": "rewritten ONLY to apply selected suggestions using existing facts",
         "technologies": ["unchanged — same list as original"]
       }}
     ]

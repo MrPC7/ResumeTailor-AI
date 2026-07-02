@@ -63,6 +63,7 @@ const formatFileSize = (bytes: number): string => {
 export function StepUpload() {
   const storedUploadData = useWorkflowStore((s) => s.uploadData);
   const completeUpload = useWorkflowStore((s) => s.completeUpload);
+  const navigateTo = useWorkflowStore((s) => s.navigateTo);
 
   const [isDragActive, setIsDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -124,11 +125,15 @@ export function StepUpload() {
   };
 
   const handleContinueWithStored = () => {
-    if (storedUploadData) completeUpload(storedUploadData);
+    if (!storedUploadData) return;
+    completeUpload(storedUploadData);
+    navigateTo("jd");
   };
 
   const handleContinueWithFresh = () => {
-    if (freshUploadData) completeUpload(freshUploadData);
+    if (!freshUploadData) return;
+    completeUpload(freshUploadData);
+    navigateTo("jd");
   };
 
   const handleUploadDifferent = () => {

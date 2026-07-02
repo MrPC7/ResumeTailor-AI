@@ -53,10 +53,11 @@ type Actions = {
   completeUpload: (data: UploadStepData) => void;
   completeJD: (data: JDStepData) => void;
   completeRecruiter: (data: RecruiterStepData) => void;
+  setSuggestionsData: (data: SuggestionsStepData) => void;
   completeSuggestions: (data: SuggestionsStepData) => void;
   toggleSuggestion: (id: string) => void;
 
-  setPreviewData: (data: PreviewStepData) => void;
+  completePreview: (data: PreviewStepData) => void;
 
   setCoverLetter: (data: CoverLetterData) => void;
   clearCoverLetter: () => void;
@@ -67,11 +68,6 @@ type Actions = {
 export type WorkflowStore = State & Actions;
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-
-function nextStep(current: WorkflowStep): WorkflowStep {
-  const idx = STEP_ORDER.indexOf(current);
-  return STEP_ORDER[Math.min(idx + 1, STEP_ORDER.length - 1)];
-}
 
 function prevStep(current: WorkflowStep): WorkflowStep {
   const idx = STEP_ORDER.indexOf(current);
@@ -99,26 +95,19 @@ const INITIAL_STATE: State = {
 
 // ── Store ─────────────────────────────────────────────────────────────────
 
+const WORKFLOW_STATE_MACHINE: Record<WorkflowStep, { canEnter: (state: State) => boolean }> = {
+  upload: { canEnter: () => true },
+  jd: { canEnter: (state) => state.uploadData !== null },
+  recruiter: { canEnter: (state) => state.uploadData !== null && state.jdData !== null },
+  suggestions: { canEnter: (state) => state.recruiterData !== null },
+  preview: { canEnter: (state) => state.previewData !== null },
+  download: { canEnter: (state) => state.previewData !== null },
+};
+
 export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
   ...INITIAL_STATE,
 
-  canNavigateTo: (step) => {
-    const { uploadData, jdData, recruiterData, suggestionsData } = get();
-    switch (step) {
-      case "upload":
-        return true;
-      case "jd":
-        return uploadData !== null;
-      case "recruiter":
-        return uploadData !== null && jdData !== null;
-      case "suggestions":
-        return recruiterData !== null;
-      case "preview":
-        return suggestionsData !== null;
-      case "download":
-        return suggestionsData !== null;
-    }
-  },
+  canNavigateTo: (step) => WORKFLOW_STATE_MACHINE[step].canEnter(get()),
 
   isCompleted: (step) => get().completedSteps.includes(step),
 
@@ -134,9 +123,9 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
       uploadData: data,
       recruiterData: null,
       suggestionsData: null,
+      previewData: null,
       coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "upload"),
-      currentStep: nextStep("upload"),
     })),
 
   completeJD: (data) =>
@@ -144,18 +133,28 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
       jdData: data,
       recruiterData: null,
       suggestionsData: null,
+      previewData: null,
       coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "jd"),
-      currentStep: nextStep("jd"),
     })),
 
   completeRecruiter: (data) =>
     set((s) => ({
       recruiterData: data,
       suggestionsData: null,
+      previewData: null,
       coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "recruiter"),
-      currentStep: nextStep("recruiter"),
+    })),
+
+  setSuggestionsData: (data) =>
+    set((s) => ({
+      suggestionsData: data,
+      previewData: null,
+      coverLetter: null,
+      completedSteps: s.completedSteps.filter(
+        (step) => step !== "suggestions" && step !== "preview" && step !== "download"
+      ),
     })),
 
   completeSuggestions: (data) =>
@@ -164,7 +163,6 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
       previewData: null,
       coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "suggestions"),
-      currentStep: nextStep("suggestions"),
     })),
 
   toggleSuggestion: (id) =>
@@ -178,10 +176,19 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
             [id]: !s.suggestionsData.selectedSuggestions[id],
           },
         },
+        previewData: null,
+        coverLetter: null,
+        completedSteps: s.completedSteps.filter(
+          (step) => step !== "suggestions" && step !== "preview" && step !== "download"
+        ),
       };
     }),
 
-  setPreviewData: (data) => set({ previewData: data }),
+  completePreview: (data) =>
+    set((s) => ({
+      previewData: data,
+      completedSteps: advanceCompleted(s.completedSteps, "preview"),
+    })),
 
   setCoverLetter: (data) => set({ coverLetter: data }),
   clearCoverLetter: () => set({ coverLetter: null }),

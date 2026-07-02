@@ -1,3 +1,5 @@
+import type { ReevaluationResult } from "@/components/recruiter/types";
+
 export type WorkflowStep = "upload" | "jd" | "recruiter" | "suggestions" | "preview" | "download";
 
 export type ExperienceItem = {
@@ -176,4 +178,5 @@ export type SuggestionsStepData = {
 
 export type PreviewStepData = {
   customizedResume: StructuredResume;
+  reevaluation: ReevaluationResult;
 };
