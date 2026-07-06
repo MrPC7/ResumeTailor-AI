@@ -28,6 +28,7 @@ type FormValues = z.infer<typeof jdSchema>;
 export function StepJD() {
   const storedJdData = useWorkflowStore((s) => s.jdData);
   const completeJD = useWorkflowStore((s) => s.completeJD);
+  const navigateTo = useWorkflowStore((s) => s.navigateTo);
   const goPrev = useWorkflowStore((s) => s.goPrev);
   const resume = useWorkflowStore((s) => s.uploadData?.resume);
 
@@ -67,6 +68,7 @@ export function StepJD() {
     // Avoid unnecessary API call if the JD text hasn't changed.
     if (storedJdData && values.jobDescription.trim() === storedJdData.jobDescription.trim()) {
       completeJD(storedJdData);
+      navigateTo("recruiter");
       return;
     }
     mutation.mutate(values);
@@ -75,6 +77,7 @@ export function StepJD() {
   const handleContinue = () => {
     if (analyzedJD) {
       completeJD({ jobDescription: jobDescriptionValue, analyzedJD });
+      navigateTo("recruiter");
     }
   };
 

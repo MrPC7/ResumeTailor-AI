@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import type {
-  ATSStepData,
   CoverLetterData,
   JDStepData,
-  OptimizeResult,
+  PreviewStepData,
+  RecruiterStepData,
+  SuggestionsStepData,
   UploadStepData,
   WorkflowStep,
 } from "@/features/workflow/types/workflow.types";
@@ -13,22 +14,19 @@ import type {
 export const STEP_ORDER: WorkflowStep[] = [
   "upload",
   "jd",
-  "ats",
-  "recommendations",
+  "recruiter",
+  "suggestions",
   "preview",
   "download",
 ];
 
 // ── Dependency graph ─────────────────────────────────────────────────────
-// Maps each step to the steps whose cached data should be cleared when
-// that step's data is replaced (e.g. re-uploading a resume invalidates
-// ATS results but not the stored job-description text).
 
 const DOWNSTREAM: Record<WorkflowStep, WorkflowStep[]> = {
-  upload: ["ats", "recommendations", "preview", "download"],
-  jd: ["ats", "recommendations", "preview", "download"],
-  ats: ["recommendations", "preview", "download"],
-  recommendations: ["preview", "download"],
+  upload: ["recruiter", "suggestions", "preview", "download"],
+  jd: ["recruiter", "suggestions", "preview", "download"],
+  recruiter: ["suggestions", "preview", "download"],
+  suggestions: ["preview", "download"],
   preview: ["download"],
   download: [],
 };
@@ -37,30 +35,29 @@ const DOWNSTREAM: Record<WorkflowStep, WorkflowStep[]> = {
 
 type State = {
   currentStep: WorkflowStep;
-  /** Steps whose data has been successfully produced and not yet invalidated. */
   completedSteps: WorkflowStep[];
   uploadData: UploadStepData | null;
   jdData: JDStepData | null;
-  atsStepData: ATSStepData | null;
-  optimizeResult: OptimizeResult | null;
+  recruiterData: RecruiterStepData | null;
+  suggestionsData: SuggestionsStepData | null;
+  previewData: PreviewStepData | null;
   coverLetter: CoverLetterData | null;
 };
 
 type Actions = {
-  /** Returns true when the user has all prerequisites to visit `step`. */
   canNavigateTo: (step: WorkflowStep) => boolean;
-  /** Returns true when the step is in the completed-steps list. */
   isCompleted: (step: WorkflowStep) => boolean;
   navigateTo: (step: WorkflowStep) => void;
   goPrev: () => void;
 
   completeUpload: (data: UploadStepData) => void;
   completeJD: (data: JDStepData) => void;
-  completeATS: (data: ATSStepData) => void;
-  /** Update recommendation selections without re-running analysis. */
-  updateSelectedRecommendations: (selections: Record<string, boolean>) => void;
-  completeRecommendations: (result: OptimizeResult) => void;
-  completePreview: () => void;
+  completeRecruiter: (data: RecruiterStepData) => void;
+  setSuggestionsData: (data: SuggestionsStepData) => void;
+  completeSuggestions: (data: SuggestionsStepData) => void;
+  toggleSuggestion: (id: string) => void;
+
+  completePreview: (data: PreviewStepData) => void;
 
   setCoverLetter: (data: CoverLetterData) => void;
   clearCoverLetter: () => void;
@@ -72,20 +69,11 @@ export type WorkflowStore = State & Actions;
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
-function nextStep(current: WorkflowStep): WorkflowStep {
-  const idx = STEP_ORDER.indexOf(current);
-  return STEP_ORDER[Math.min(idx + 1, STEP_ORDER.length - 1)];
-}
-
 function prevStep(current: WorkflowStep): WorkflowStep {
   const idx = STEP_ORDER.indexOf(current);
   return STEP_ORDER[Math.max(idx - 1, 0)];
 }
 
-/**
- * Returns `completedSteps` with `completing` added and all its downstream
- * dependents removed.
- */
 function advanceCompleted(current: WorkflowStep[], completing: WorkflowStep): WorkflowStep[] {
   const downstream = DOWNSTREAM[completing];
   const withoutDownstream = current.filter((s) => !downstream.includes(s));
@@ -99,39 +87,29 @@ const INITIAL_STATE: State = {
   completedSteps: [],
   uploadData: null,
   jdData: null,
-  atsStepData: null,
-  optimizeResult: null,
+  recruiterData: null,
+  suggestionsData: null,
+  previewData: null,
   coverLetter: null,
 };
 
 // ── Store ─────────────────────────────────────────────────────────────────
 
+const WORKFLOW_STATE_MACHINE: Record<WorkflowStep, { canEnter: (state: State) => boolean }> = {
+  upload: { canEnter: () => true },
+  jd: { canEnter: (state) => state.uploadData !== null },
+  recruiter: { canEnter: (state) => state.uploadData !== null && state.jdData !== null },
+  suggestions: { canEnter: (state) => state.recruiterData !== null },
+  preview: { canEnter: (state) => state.previewData !== null },
+  download: { canEnter: (state) => state.previewData !== null },
+};
+
 export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
   ...INITIAL_STATE,
 
-  // ── Query helpers ──────────────────────────────────────────────────────
-
-  canNavigateTo: (step) => {
-    const { uploadData, jdData, atsStepData, optimizeResult } = get();
-    switch (step) {
-      case "upload":
-        return true;
-      case "jd":
-        return uploadData !== null;
-      case "ats":
-        return uploadData !== null && jdData !== null;
-      case "recommendations":
-        return uploadData !== null && jdData !== null && atsStepData !== null;
-      case "preview":
-        return optimizeResult !== null;
-      case "download":
-        return optimizeResult !== null;
-    }
-  },
+  canNavigateTo: (step) => WORKFLOW_STATE_MACHINE[step].canEnter(get()),
 
   isCompleted: (step) => get().completedSteps.includes(step),
-
-  // ── Navigation ─────────────────────────────────────────────────────────
 
   navigateTo: (step) => {
     if (!get().canNavigateTo(step)) return;
@@ -140,62 +118,76 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
 
   goPrev: () => set((s) => ({ currentStep: prevStep(s.currentStep) })),
 
-  // ── Step completions ───────────────────────────────────────────────────
-
   completeUpload: (data) =>
     set((s) => ({
       uploadData: data,
-      // Preserve jdData: JD analysis is independent of the resume file.
-      // Invalidate atsStepData + optimizeResult as they depend on the resume.
-      atsStepData: null,
-      optimizeResult: null,
+      recruiterData: null,
+      suggestionsData: null,
+      previewData: null,
       coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "upload"),
-      currentStep: nextStep("upload"),
     })),
 
   completeJD: (data) =>
     set((s) => ({
       jdData: data,
-      atsStepData: null,
-      optimizeResult: null,
+      recruiterData: null,
+      suggestionsData: null,
+      previewData: null,
       coverLetter: null,
       completedSteps: advanceCompleted(s.completedSteps, "jd"),
-      currentStep: nextStep("jd"),
     })),
 
-  completeATS: (data) =>
+  completeRecruiter: (data) =>
     set((s) => ({
-      atsStepData: data,
-      optimizeResult: null,
+      recruiterData: data,
+      suggestionsData: null,
+      previewData: null,
       coverLetter: null,
-      completedSteps: advanceCompleted(s.completedSteps, "ats"),
-      currentStep: nextStep("ats"),
+      completedSteps: advanceCompleted(s.completedSteps, "recruiter"),
     })),
 
-  updateSelectedRecommendations: (selections) =>
+  setSuggestionsData: (data) =>
+    set((s) => ({
+      suggestionsData: data,
+      previewData: null,
+      coverLetter: null,
+      completedSteps: s.completedSteps.filter(
+        (step) => step !== "suggestions" && step !== "preview" && step !== "download"
+      ),
+    })),
+
+  completeSuggestions: (data) =>
+    set((s) => ({
+      suggestionsData: data,
+      previewData: null,
+      coverLetter: null,
+      completedSteps: advanceCompleted(s.completedSteps, "suggestions"),
+    })),
+
+  toggleSuggestion: (id) =>
     set((s) => {
-      if (!s.atsStepData) return {};
-      const downstream = DOWNSTREAM.recommendations;
+      if (!s.suggestionsData) return {};
       return {
-        atsStepData: { ...s.atsStepData, selectedRecommendations: selections },
-        // Clear cached optimization result so the next "Apply" re-runs.
-        optimizeResult: null,
-        completedSteps: s.completedSteps.filter((step) => !downstream.includes(step)),
+        suggestionsData: {
+          ...s.suggestionsData,
+          selectedSuggestions: {
+            ...s.suggestionsData.selectedSuggestions,
+            [id]: !s.suggestionsData.selectedSuggestions[id],
+          },
+        },
+        previewData: null,
+        coverLetter: null,
+        completedSteps: s.completedSteps.filter(
+          (step) => step !== "suggestions" && step !== "preview" && step !== "download"
+        ),
       };
     }),
 
-  completeRecommendations: (result) =>
+  completePreview: (data) =>
     set((s) => ({
-      optimizeResult: result,
-      completedSteps: advanceCompleted(s.completedSteps, "recommendations"),
-      currentStep: nextStep("recommendations"),
-    })),
-
-  completePreview: () =>
-    set((s) => ({
+      previewData: data,
       completedSteps: advanceCompleted(s.completedSteps, "preview"),
-      currentStep: nextStep("preview"),
     })),
 
   setCoverLetter: (data) => set({ coverLetter: data }),

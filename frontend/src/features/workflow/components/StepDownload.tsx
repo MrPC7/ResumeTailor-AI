@@ -1,211 +1,162 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ClipboardCopy, Download, FileText, RotateCcw, Search } from "lucide-react";
+import { Download, FileText, Loader2, RotateCcw } from "lucide-react";
+import { CoverLetterTab } from "@/components/cover-letter/CoverLetterTab";
+import { useWorkflowStore } from "@/features/workflow/store/workflow.store";
+import { exportResume, downloadBlob } from "@/features/workflow/services/export-resume.service";
+import { pushToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ATSComparisonCard } from "@/components/ats/ATSComparisonCard";
-import { ATSBreakdown } from "@/components/ats/ATSBreakdown";
-import { MatchedKeywords } from "@/components/ats/MatchedKeywords";
-import { MissingKeywords } from "@/components/ats/MissingKeywords";
-import { CoverLetterTab } from "@/components/cover-letter/CoverLetterTab";
-import {
-  downloadBlob,
-  exportResume,
-  type ExportFormat,
-} from "@/features/workflow/services/export-resume.service";
-import { useWorkflowStore } from "@/features/workflow/store/workflow.store";
-import { pushToast } from "@/lib/toast";
-
-type TabId = "resume" | "ats" | "cover-letter";
-
-const TABS: Array<{ id: TabId; label: string; icon: React.ReactNode }> = [
-  { id: "resume", label: "Resume Preview", icon: <Download className="h-4 w-4" /> },
-  { id: "ats", label: "ATS Insights", icon: <Search className="h-4 w-4" /> },
-  { id: "cover-letter", label: "Cover Letter", icon: <FileText className="h-4 w-4" /> },
-];
+type TabId = "resume" | "cover-letter";
 
 export function StepDownload() {
-  const optimizeResult = useWorkflowStore((s) => s.optimizeResult!);
+  const uploadData = useWorkflowStore((s) => s.uploadData!);
+  const previewData = useWorkflowStore((s) => s.previewData);
   const goPrev = useWorkflowStore((s) => s.goPrev);
+  const navigateTo = useWorkflowStore((s) => s.navigateTo);
   const reset = useWorkflowStore((s) => s.reset);
 
-  const { customizedResume, atsComparison } = optimizeResult;
   const [activeTab, setActiveTab] = useState<TabId>("resume");
-  const [copied, setCopied] = useState(false);
-  const [isDownloading, setIsDownloading] = useState<ExportFormat | null>(null);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingDocx, setExportingDocx] = useState(false);
 
-  const handleDownload = async (format: ExportFormat) => {
+  const customizedResume = previewData?.customizedResume ?? uploadData.resume;
+  const resumeName = uploadData.resume.name ?? "resume";
+
+  const handleExport = async (format: "pdf" | "docx") => {
+    const setExporting = format === "pdf" ? setExportingPdf : setExportingDocx;
+    setExporting(true);
     try {
-      setDownloadError(null);
-      setIsDownloading(format);
       const result = await exportResume({
         resume: customizedResume,
         format,
-        fileName: customizedResume.name ?? undefined,
+        fileName: `${resumeName}_optimized`,
       });
       downloadBlob(result.blob, result.fileName);
       pushToast({ type: "success", message: `${format.toUpperCase()} download started.` });
-    } catch (error) {
-      setDownloadError(error instanceof Error ? error.message : "Failed to export resume.");
+    } catch {
+      // Error toast already handled by exportResume
     } finally {
-      setIsDownloading(null);
+      setExporting(false);
     }
   };
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(customizedResume, null, 2));
-      setCopied(true);
-      pushToast({ type: "success", message: "Optimized resume JSON copied to clipboard." });
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      pushToast({ type: "error", message: "Unable to copy JSON. Please try again." });
-    }
-  };
+  const tabs: { id: TabId; label: string }[] = [
+    { id: "resume", label: "Optimized Resume" },
+    { id: "cover-letter", label: "Cover Letter" },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Score summary */}
-      <ATSComparisonCard comparison={atsComparison} />
+      {/* Header */}
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-center">
+        <p className="text-sm font-medium text-emerald-700">
+          ✓ Your resume is ready — download below
+        </p>
+      </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1">
-        {TABS.map((tab) => (
+      <div className="flex gap-1 rounded-lg border bg-white p-1" role="tablist">
+        {tabs.map((tab) => (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            id={`dl-tab-${tab.id}`}
+            aria-controls={`dl-tabpanel-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+              "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
               activeTab === tab.id
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900"
             )}
           >
-            {tab.icon}
-            <span className="hidden sm:inline">{tab.label}</span>
-            <span className="sm:hidden">
-              {tab.id === "resume" ? "Resume" : tab.id === "ats" ? "ATS" : "Cover Letter"}
-            </span>
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Tab content */}
-      <div className="min-h-[300px]">
-        {/* ── Resume Download Tab ────────────────────────────────── */}
+      {/* Tab panels */}
+      <div role="tabpanel" id={`dl-tabpanel-${activeTab}`} aria-labelledby={`dl-tab-${activeTab}`}>
         {activeTab === "resume" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Download Your Optimized Resume</CardTitle>
-              <CardDescription>
-                Your resume for{" "}
-                <span className="font-medium text-slate-900">{customizedResume.name ?? "you"}</span>{" "}
-                is ready to download.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                className="w-full"
-                onClick={() => void handleDownload("pdf")}
-                disabled={isDownloading !== null}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {isDownloading === "pdf" ? "Generating PDF..." : "Download PDF"}
-              </Button>
-              <Button
-                className="w-full"
-                variant="secondary"
-                onClick={() => void handleDownload("docx")}
-                disabled={isDownloading !== null}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {isDownloading === "docx" ? "Generating DOCX..." : "Download DOCX"}
-              </Button>
-              <Button className="w-full" variant="outline" onClick={handleCopy}>
-                {copied ? (
-                  <>
-                    <Check className="mr-2 h-4 w-4 text-emerald-600" />
-                    <span className="text-emerald-600">Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <ClipboardCopy className="mr-2 h-4 w-4" />
-                    Copy JSON to Clipboard
-                  </>
-                )}
-              </Button>
-              {downloadError && <p className="text-sm text-red-600">{downloadError}</p>}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ── ATS Insights Tab ───────────────────────────────────── */}
-        {activeTab === "ats" && (
           <div className="space-y-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Optimized Score Breakdown</CardTitle>
-                <CardDescription>Per-dimension scores after optimization.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ATSBreakdown scores={atsComparison.after.scores} />
-              </CardContent>
-            </Card>
+            {/* Resume preview card */}
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
+                  <FileText className="h-5 w-5 text-indigo-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-900">{resumeName} — Optimized</p>
+                  <p className="text-xs text-slate-500">
+                    {customizedResume.skills.length} skills
+                    {customizedResume.experience.length > 0 &&
+                      ` · ${customizedResume.experience.length} experience entries`}
+                    {customizedResume.projects.length > 0 &&
+                      ` · ${customizedResume.projects.length} projects`}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {atsComparison.after.matchedKeywords.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">
-                      Matched Keywords ({atsComparison.after.matchedKeywords.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <MatchedKeywords keywords={atsComparison.after.matchedKeywords} />
-                  </CardContent>
-                </Card>
-              )}
-              {atsComparison.after.missingKeywords.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">
-                      Still Missing ({atsComparison.after.missingKeywords.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <MissingKeywords keywords={atsComparison.after.missingKeywords} />
-                  </CardContent>
-                </Card>
-              )}
+            {/* Download buttons */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                onClick={() => void handleExport("pdf")}
+                disabled={exportingPdf}
+                className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {exportingPdf ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {exportingPdf ? "Generating PDF..." : "Download PDF"}
+              </button>
+              <button
+                onClick={() => void handleExport("docx")}
+                disabled={exportingDocx}
+                className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {exportingDocx ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {exportingDocx ? "Generating DOCX..." : "Download DOCX"}
+              </button>
             </div>
           </div>
         )}
 
-        {/* ── Cover Letter Tab ───────────────────────────────────── */}
         {activeTab === "cover-letter" && <CoverLetterTab />}
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between gap-3">
-        <Button variant="outline" size="sm" onClick={goPrev}>
-          ← Previous
-        </Button>
-        <Button
-          className="flex items-center gap-2"
-          variant="ghost"
-          onClick={() => {
-            if (window.confirm("Start over? This will clear all your progress.")) {
-              reset();
-            }
-          }}
+      <div className="flex justify-between">
+        <button
+          onClick={goPrev}
+          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
-          <RotateCcw className="h-4 w-4" />
-          Start Over
-        </Button>
+          ← Back
+        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigateTo("recruiter")}
+            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            View Recruiter Review
+          </button>
+          <button
+            onClick={reset}
+            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Start New
+          </button>
+        </div>
       </div>
     </div>
   );

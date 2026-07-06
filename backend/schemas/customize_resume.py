@@ -32,17 +32,24 @@ class CustomizeResumeRaw(BaseModel):
     suggestions: list[str] = []
 
 
+class CustomizeSuggestion(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    title: str
+    description: str
+    priority: str = ""
+    estimated_impact: str = ""
+    affected_section: str = ""
+
+
 class CustomizeResumeRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     resume: ExtractResumeResponse
     jd: AnalyzeJDResponse
-    accepted_recommendations: list[str] = Field(
-        default_factory=list, alias="acceptedRecommendations",
-    )
-    rejected_recommendations: list[str] = Field(
-        default_factory=list, alias="rejectedRecommendations",
-    )
+    selected_suggestion_ids: list[str] = Field(default_factory=list, alias="selectedSuggestionIds")
+    suggestions: list[CustomizeSuggestion] = Field(default_factory=list)
 
 
 class CustomizeResumeResponse(BaseModel):

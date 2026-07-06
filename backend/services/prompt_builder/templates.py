@@ -120,13 +120,13 @@ _RESUME_CUSTOMIZATION_SYSTEM = (
 )
 
 _RESUME_CUSTOMIZATION_USER = """\
-Apply ONLY the accepted recommendations below to tailor this resume for the target job.
+Apply ONLY the suggestions whose IDs are listed in selectedSuggestionIds to tailor this resume for the target job.
 
 ═══════════════════════════════════════════
 ABSOLUTE INTEGRITY RULES — VIOLATION = FAILURE
 ═══════════════════════════════════════════
 
-1. NEVER apply any recommendation from the REJECTED list.
+1. NEVER apply any suggestion whose ID is absent from selectedSuggestionIds.
 2. NEVER invent, fabricate, or hallucinate:
    - Work experience, job titles, companies, or employment durations
    - Projects that do not exist in the original resume
@@ -155,12 +155,17 @@ LENGTH PRESERVATION RULES — CRITICAL
 12. Summary should be ≤ 2 sentences.
 
 ═══════════════════════════════════════════
-ACCEPTED RECOMMENDATIONS (apply these)
+selectedSuggestionIds
+═══════════════════════════════════════════
+{selected_suggestion_ids_json}
+
+═══════════════════════════════════════════
+SELECTED SUGGESTIONS (apply only these)
 ═══════════════════════════════════════════
 {accepted_json}
 
 ═══════════════════════════════════════════
-REJECTED RECOMMENDATIONS (DO NOT apply)
+UNSELECTED SUGGESTION IDS (do not apply)
 ═══════════════════════════════════════════
 {rejected_json}
 
@@ -172,14 +177,14 @@ Required JSON structure:
     "name": "unchanged from original",
     "email": "unchanged from original",
     "phone": "unchanged from original",
-    "summary": "rewritten ONLY if an accepted recommendation requires it, otherwise unchanged",
+    "summary": "rewritten ONLY if a selected suggestion requires it, otherwise unchanged",
     "skills": ["reordered — JD-relevant skills first, NO new skills added"],
     "experience": [
       {{
         "company": "unchanged",
         "position": "unchanged",
         "duration": "unchanged",
-        "description": "rewritten ONLY to apply accepted recommendations using existing facts"
+        "description": "rewritten ONLY to apply selected suggestions using existing facts"
       }}
     ],
     "education": [
@@ -192,7 +197,7 @@ Required JSON structure:
     "projects": [
       {{
         "name": "unchanged",
-        "description": "rewritten ONLY to apply accepted recommendations using existing facts",
+        "description": "rewritten ONLY to apply selected suggestions using existing facts",
         "technologies": ["unchanged — same list as original"]
       }}
     ]
@@ -261,64 +266,338 @@ Target Job Description Analysis JSON:
 
 
 # ---------------------------------------------------------------------------
-# ATS Evaluation
+# Candidate Profile Extraction (v2 multi-agent)
 # ---------------------------------------------------------------------------
-_ATS_EVALUATION_SYSTEM = (
-    "You are an expert ATS (Applicant Tracking System) evaluator and career advisor. "
-    "You analyse resumes against job descriptions with the same rigour as enterprise "
-    "ATS software.  Return ONLY a valid JSON object — no markdown fences, no extra text."
+_CANDIDATE_PROFILE_SYSTEM = (
+    "You are an expert resume analyst. "
+    "Extract factual, structured information from raw resume text. "
+    "Do NOT evaluate, score, or make judgments — only extract facts. "
+    "Return ONLY a valid JSON object. "
+    "Do not include markdown code fences, backticks, or any text outside the JSON object."
 )
 
-_ATS_EVALUATION_USER = """\
-Evaluate the resume below against the job description analysis.
+_CANDIDATE_PROFILE_USER = """\
+Extract a structured candidate profile from the resume text below.
 
-Score each dimension from 0 to 100:
-
-1. **skills** — How well the candidate's skills match required and preferred skills.
-2. **keywords** — Coverage of ATS keywords from the JD found in the resume.
-3. **experience** — Relevance, seniority, and depth of work experience to the role.
-4. **education** — Alignment of education background with job requirements.
-5. **overallFit** — Holistic fit considering culture, domain, and transferable skills.
-
-Also provide:
-- **overallScore** — Weighted composite (skills 30%, keywords 25%, experience 25%, education 10%, overallFit 10%).
-- **confidence** — Your confidence in the evaluation accuracy (0–100).
-- **strengths** — Top 3–5 resume strengths for this role.
-- **weaknesses** — Top 3–5 gaps or weaknesses.
-- **matchedKeywords** — Specific keywords/skills from the JD that ARE found in the resume.
-- **missingKeywords** — Specific keywords/skills from the JD missing in the resume.
-- **recommendedActions** — 5–8 concrete, actionable steps to improve ATS compatibility.
+Focus on factual extraction only — do NOT score or evaluate.
 
 Required JSON structure:
 {{
-  "overallScore": <int 0-100>,
-  "confidence": <int 0-100>,
-  "scores": {{
-    "skills": <int 0-100>,
-    "keywords": <int 0-100>,
-    "experience": <int 0-100>,
-    "education": <int 0-100>,
-    "overallFit": <int 0-100>
-  }},
-  "strengths": ["..."],
-  "weaknesses": ["..."],
-  "matchedKeywords": ["..."],
-  "missingKeywords": ["..."],
-  "recommendedActions": ["..."]
+  "skills": [
+    {{
+      "name": "Skill or technology name",
+      "category": "One of: Programming Language, Framework, Database, Cloud, DevOps, Tool, Soft Skill, Domain, Other"
+    }}
+  ],
+  "work_experience": [
+    {{
+      "company": "Company name",
+      "position": "Job title",
+      "duration": "e.g. Jan 2022 - Present or 2019 - 2021",
+      "responsibilities": ["Each key responsibility or achievement as a separate string"],
+      "technologies": ["Technologies used in this role"]
+    }}
+  ],
+  "education": [
+    {{
+      "institution": "University or school name",
+      "degree": "Degree title (e.g. B.Tech, M.Sc, MBA)",
+      "field_of_study": "Field or major (e.g. Computer Science)",
+      "year": "Graduation year or duration"
+    }}
+  ],
+  "projects": [
+    {{
+      "name": "Project name",
+      "description": "What the project does",
+      "technologies": ["Tech1", "Tech2"],
+      "role": "Candidate's role in the project"
+    }}
+  ],
+  "certifications": [
+    {{
+      "name": "Certification name",
+      "issuer": "Issuing organization",
+      "year": "Year obtained or expiry"
+    }}
+  ],
+  "total_years_experience": <number or null if cannot be determined>,
+  "primary_domain": "The candidate's primary professional domain (e.g. Backend Development, Data Science, DevOps)"
 }}
 
 Rules:
-- Base scores on factual evidence in the resume — do not fabricate.
-- matchedKeywords must only contain terms that genuinely appear in BOTH the JD and the resume.
-- missingKeywords must only contain terms that genuinely appear in the JD but not the resume.
-- recommendedActions must be specific and actionable (e.g. "Add Python to your skills section").
-- If information is insufficient for a dimension, score conservatively and explain in weaknesses.
+- Extract ALL skills mentioned anywhere in the resume — do not skip any.
+- Categorize each skill into exactly one category.
+- List work experience with most recent first.
+- Extract individual responsibilities as separate list items, not merged paragraphs.
+- List technologies per role based on what's mentioned in that specific role.
+- Use null for total_years_experience only if it truly cannot be inferred from dates.
+- Use empty arrays [] for any missing list fields.
+- Do NOT fabricate or infer information not present in the text.
 
-Resume JSON:
-{resume_json}
+Resume Text:
+{raw_text}"""
 
-Job Description Analysis JSON:
-{jd_json}"""
+
+# ---------------------------------------------------------------------------
+# Job Profile Extraction (v2 multi-agent)
+# ---------------------------------------------------------------------------
+_JOB_PROFILE_SYSTEM = (
+    "You are an expert technical recruiter and job description analyst. "
+    "Extract structured, factual information from job descriptions. "
+    "Do NOT evaluate or score — only extract facts. "
+    "Return ONLY a valid JSON object. "
+    "Do not include markdown code fences, backticks, or any text outside the JSON object."
+)
+
+_JOB_PROFILE_USER = """\
+Extract a structured job profile from the job description below.
+
+Focus on factual extraction only — do NOT evaluate or score candidates.
+
+Required JSON structure:
+{{
+  "role": "Exact job title as stated in the JD",
+  "seniority": "One of: Intern, Junior, Mid, Senior, Lead, Principal, Staff, Director, VP, C-Level",
+  "must_have_skills": [
+    {{
+      "name": "Skill or technology explicitly marked as required/mandatory",
+      "category": "One of: Programming Language, Framework, Database, Cloud, DevOps, Tool, Soft Skill, Domain, Other"
+    }}
+  ],
+  "preferred_skills": [
+    {{
+      "name": "Skill or technology marked as preferred/nice-to-have/bonus",
+      "category": "One of: Programming Language, Framework, Database, Cloud, DevOps, Tool, Soft Skill, Domain, Other"
+    }}
+  ],
+  "responsibilities": [
+    {{
+      "description": "A single responsibility or duty as a concise statement",
+      "priority": "One of: high, medium, low — based on emphasis and ordering in the JD"
+    }}
+  ],
+  "experience_required": {{
+    "min_years": <number or null if not specified>,
+    "max_years": <number or null if not specified>,
+    "domain": "Required domain of experience (e.g. Backend Development, Machine Learning)"
+  }}
+}}
+
+Rules:
+- must_have_skills: ONLY skills explicitly stated as required, mandatory, or essential.
+- preferred_skills: ONLY skills stated as preferred, nice-to-have, bonus, or a plus.
+- Do NOT put the same skill in both must_have and preferred — pick the stronger signal.
+- Categorize each skill into exactly one category.
+- responsibilities: Extract each distinct duty as a separate item. First-listed or emphasized items are "high" priority.
+- seniority: Infer from title, years required, and scope if not stated explicitly.
+- experience_required.min_years: Extract the minimum years required (e.g. "3+ years" → 3.0).
+- experience_required.max_years: Extract maximum if stated (e.g. "3-5 years" → max 5.0), otherwise null.
+- Use null for any numeric field that cannot be determined.
+- Use empty arrays [] for any missing list fields.
+- Do NOT fabricate information not present in the text.
+
+Job Description:
+{job_description}"""
+
+
+# ---------------------------------------------------------------------------
+# Recruiter Evaluation (v2 multi-agent)
+# ---------------------------------------------------------------------------
+_RECRUITER_EVALUATION_SYSTEM = (
+    "You are a Senior Technical Recruiter with 15+ years of hiring experience. "
+    "Evaluate candidates strictly based on evidence presented in their profile. "
+    "You must NEVER hallucinate, infer, or assume experience not explicitly stated. "
+    "Return ONLY a valid JSON object. "
+    "Do not include markdown code fences, backticks, or any text outside the JSON object."
+)
+
+_RECRUITER_EVALUATION_USER = """\
+Evaluate this candidate against the job requirements as a Senior Technical Recruiter.
+
+═══════════════════════════════════════════
+EVALUATION RULES — STRICT COMPLIANCE REQUIRED
+═══════════════════════════════════════════
+
+1. Use ONLY evidence from the Candidate Profile. Do NOT assume or infer unstated experience.
+2. Penalize heavily for missing MUST-HAVE skills — each missing critical skill reduces confidence significantly.
+3. Reward strong project evidence — real projects demonstrating required skills are high-signal.
+4. Preferred skills are bonus points only — never penalize for missing preferred skills.
+5. Experience years matter — if min_years required exceeds candidate's total, flag it as a gap.
+6. Every score MUST be justified in the reasoning array.
+7. match_level must be one of: strong_match, good_match, partial_match, weak_match, no_match.
+
+═══════════════════════════════════════════
+SCORING GUIDELINES
+═══════════════════════════════════════════
+
+hiring_confidence (0-100):
+- 80-100: Candidate meets all must-have skills + has relevant experience depth
+- 60-79: Meets most must-have skills, minor gaps compensated by strong evidence elsewhere
+- 40-59: Missing 2-3 critical skills but has transferable experience
+- 20-39: Missing majority of critical requirements
+- 0-19: Fundamentally misaligned profile
+
+interview_probability (0-100):
+- 80-100: Would immediately shortlist for interview
+- 60-79: Would likely advance to phone screen
+- 40-59: Borderline — depends on candidate pool quality
+- 20-39: Would probably pass unless pool is thin
+- 0-19: Would not advance
+
+match_level mapping:
+- strong_match: hiring_confidence >= 80
+- good_match: hiring_confidence 60-79
+- partial_match: hiring_confidence 40-59
+- weak_match: hiring_confidence 20-39
+- no_match: hiring_confidence < 20
+
+═══════════════════════════════════════════
+
+Required JSON structure:
+{{
+  "match_level": "one of: strong_match, good_match, partial_match, weak_match, no_match",
+  "hiring_confidence": <int 0-100>,
+  "interview_probability": <int 0-100>,
+  "strengths": [
+    "Each specific strength backed by evidence from the candidate profile (cite skill/project/experience)"
+  ],
+  "gaps": [
+    "Each gap or missing requirement with specific skill/qualification that is absent"
+  ],
+  "verdict": "One-sentence hiring recommendation (e.g. 'Strong backend candidate, recommend immediate interview' or 'Missing core ML skills, not suitable for this role')",
+  "reasoning": [
+    "Step-by-step explanation of how each score was derived, referencing specific evidence"
+  ],
+  "suggestions": [
+    {{
+      "id": "suggestion_1",
+      "title": "Short actionable title (e.g. 'Front-load Python in skills section')",
+      "description": "Detailed explanation of what to change and why, referencing specific evidence from the evaluation",
+      "priority": "One of: critical, high, medium, low",
+      "estimated_impact": "Concise expected improvement statement",
+      "affected_section": "One of: summary, skills, experience, projects, education, certifications"
+    }}
+  ]
+}}
+
+Rules:
+- strengths must reference specific skills, projects, or experience entries from the profile.
+- gaps must reference specific must-have requirements from the job profile that are missing.
+- reasoning must have at least 3 entries explaining the evaluation logic.
+- verdict must be a single concise sentence.
+- Generate 4-8 actionable suggestions, ordered by priority (critical first).
+- Each suggestion must be independent and implementable without others.
+- Suggestion id must be sequential: suggestion_1, suggestion_2, etc.
+- Do NOT suggest fabricating experience — only rewriting, reordering, or emphasizing existing content.
+- Do NOT include generic filler — every item must be specific and evidence-based.
+
+Candidate Profile:
+{candidate_json}
+
+Job Requirements:
+{job_json}"""
+
+
+# ---------------------------------------------------------------------------
+# Resume Tailoring (v2 multi-agent)
+# ---------------------------------------------------------------------------
+_RESUME_TAILORING_SYSTEM = (
+    "You are an expert resume writer and career strategist. "
+    "Your task is to rewrite a resume by applying ONLY the selected suggestions. "
+    "You must NEVER apply unselected suggestions. "
+    "You must NEVER invent, fabricate, or hallucinate any experience, skill, or achievement. "
+    "Return ONLY a valid JSON object. "
+    "Do not include markdown code fences, backticks, or any text outside the JSON object."
+)
+
+_RESUME_TAILORING_USER = """\
+Rewrite this resume by applying ONLY the selected suggestions listed below.
+
+═══════════════════════════════════════════
+ABSOLUTE INTEGRITY RULES — VIOLATION = FAILURE
+═══════════════════════════════════════════
+
+1. NEVER invent, fabricate, or hallucinate:
+   - Work experience, job titles, companies, or employment durations
+   - Projects that do not exist in the candidate profile
+   - Skills, tools, or technologies not present in the candidate profile
+   - Certifications, degrees, institutions, or achievements not in the candidate profile
+   - Metrics, numbers, or results that are not in the original data
+2. NEVER change identity fields: company, position, duration, institution, degree, year, project name, project technologies.
+3. NEVER apply suggestions from the UNSELECTED list.
+4. You may ONLY:
+   - Rewrite the summary to target the specific role
+   - Rewrite experience descriptions to emphasize JD-relevant aspects using EXISTING facts
+   - Rewrite project descriptions to highlight JD-relevant technologies and impact
+   - Reorder skills so JD-relevant and must-have skills appear first
+   - Incorporate ATS keywords into existing descriptions WHERE factually accurate
+
+═══════════════════════════════════════════
+SELECTED SUGGESTIONS — APPLY THESE ONLY
+═══════════════════════════════════════════
+{selected_suggestions_json}
+
+═══════════════════════════════════════════
+UNSELECTED SUGGESTIONS — DO NOT APPLY
+═══════════════════════════════════════════
+{unselected_suggestions_json}
+
+═══════════════════════════════════════════
+OPTIMIZATION TARGETS
+═══════════════════════════════════════════
+
+1. RELEVANCE — Apply each selected suggestion precisely as described.
+2. CLARITY — Use concise, action-oriented language. One achievement per bullet. No filler.
+3. ATS FRIENDLY — Use keywords from the job profile naturally in descriptions.
+4. READABILITY — Maintain chronological order, consistent formatting.
+
+═══════════════════════════════════════════
+
+Required JSON structure:
+{{
+  "summary": "2-3 sentence professional summary targeting the specific role, using only facts from the candidate profile",
+  "skills": ["Reordered skill list — must-have JD skills first, then preferred, then remaining. NO new skills added."],
+  "experience": [
+    {{
+      "company": "unchanged",
+      "position": "unchanged",
+      "duration": "unchanged",
+      "description": "Rewritten ONLY if a selected suggestion targets this section. Otherwise keep original description.",
+      "technologies": ["Technologies from this role — unchanged list"]
+    }}
+  ],
+  "projects": [
+    {{
+      "name": "unchanged",
+      "description": "Rewritten ONLY if a selected suggestion targets this section. Otherwise keep original.",
+      "technologies": ["unchanged — same list as original"]
+    }}
+  ],
+  "improvements_made": [
+    "Each specific change made, referencing the suggestion ID that triggered it (e.g. 'Applied suggestion_1: Reordered skills to front-load Python')"
+  ],
+  "gaps_addressed": [
+    "Each recruiter-identified gap that was addressed by a selected suggestion"
+  ]
+}}
+
+Rules:
+- Preserve the EXACT same number of experience entries and project entries.
+- Do NOT add new experience or project entries.
+- skills list must contain ONLY skills already present in the candidate profile — reorder only.
+- improvements_made must reference the suggestion ID for each change.
+- If no selected suggestions target a section, keep that section UNCHANGED from the original.
+- Keep descriptions concise — ATS-friendly, no verbosity.
+
+Candidate Profile:
+{candidate_json}
+
+Job Profile:
+{job_json}
+
+Recruiter Evaluation:
+{evaluation_json}"""
 
 
 # ---------------------------------------------------------------------------
@@ -341,8 +620,20 @@ PROMPT_REGISTRY: dict[PromptType, PromptTemplate] = {
         system=_COVER_LETTER_SYSTEM,
         user_template=_COVER_LETTER_USER,
     ),
-    PromptType.ATS_EVALUATION: PromptTemplate(
-        system=_ATS_EVALUATION_SYSTEM,
-        user_template=_ATS_EVALUATION_USER,
+    PromptType.CANDIDATE_PROFILE_EXTRACTION: PromptTemplate(
+        system=_CANDIDATE_PROFILE_SYSTEM,
+        user_template=_CANDIDATE_PROFILE_USER,
+    ),
+    PromptType.JOB_PROFILE_EXTRACTION: PromptTemplate(
+        system=_JOB_PROFILE_SYSTEM,
+        user_template=_JOB_PROFILE_USER,
+    ),
+    PromptType.RECRUITER_EVALUATION: PromptTemplate(
+        system=_RECRUITER_EVALUATION_SYSTEM,
+        user_template=_RECRUITER_EVALUATION_USER,
+    ),
+    PromptType.RESUME_TAILORING: PromptTemplate(
+        system=_RESUME_TAILORING_SYSTEM,
+        user_template=_RESUME_TAILORING_USER,
     ),
 }

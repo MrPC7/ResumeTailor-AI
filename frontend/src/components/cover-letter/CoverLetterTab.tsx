@@ -25,9 +25,7 @@ import { exportResume, downloadBlob } from "@/features/workflow/services/export-
 import { pushToast } from "@/lib/toast";
 
 export function CoverLetterTab() {
-  const resume = useWorkflowStore(
-    (s) => s.optimizeResult?.customizedResume ?? s.uploadData?.resume
-  );
+  const resume = useWorkflowStore((s) => s.uploadData?.resume);
   const jdData = useWorkflowStore((s) => s.jdData);
   const coverLetter = useWorkflowStore((s) => s.coverLetter);
   const setCoverLetter = useWorkflowStore((s) => s.setCoverLetter);

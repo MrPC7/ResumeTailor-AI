@@ -1,10 +1,10 @@
 "use client";
 
-import { StepATS } from "@/features/workflow/components/StepATS";
 import { StepDownload } from "@/features/workflow/components/StepDownload";
 import { StepJD } from "@/features/workflow/components/StepJD";
 import { StepPreview } from "@/features/workflow/components/StepPreview";
-import { StepRecommendations } from "@/features/workflow/components/StepRecommendations";
+import { StepRecruiter } from "@/features/workflow/components/StepRecruiter";
+import { StepSuggestions } from "@/features/workflow/components/StepSuggestions";
 import { StepUpload } from "@/features/workflow/components/StepUpload";
 import { WorkflowStepper } from "@/features/workflow/components/WorkflowStepper";
 import { useWorkflowStore } from "@/features/workflow/store/workflow.store";
@@ -30,8 +30,8 @@ export default function Home() {
         <div className="mt-8">
           {currentStep === "upload" && <StepUpload />}
           {currentStep === "jd" && <StepJD />}
-          {currentStep === "ats" && <StepATS />}
-          {currentStep === "recommendations" && <StepRecommendations />}
+          {currentStep === "recruiter" && <StepRecruiter />}
+          {currentStep === "suggestions" && <StepSuggestions />}
           {currentStep === "preview" && <StepPreview />}
           {currentStep === "download" && <StepDownload />}
         </div>

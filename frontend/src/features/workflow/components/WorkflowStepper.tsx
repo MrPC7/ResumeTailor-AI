@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Check, Download, Eye, FileText, Search, Settings, Upload } from "lucide-react";
+import { Check, Download, Eye, FileText, Lightbulb, Search, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STEP_ORDER, useWorkflowStore } from "@/features/workflow/store/workflow.store";
 import type { WorkflowStep } from "@/features/workflow/types/workflow.types";
@@ -20,12 +20,17 @@ const STEPS: StepMeta[] = [
     icon: <Upload className="h-4 w-4" />,
   },
   { id: "jd", label: "Job Description", shortLabel: "Job", icon: <FileText className="h-4 w-4" /> },
-  { id: "ats", label: "ATS Analysis", shortLabel: "ATS", icon: <Search className="h-4 w-4" /> },
   {
-    id: "recommendations",
-    label: "Recommendations",
-    shortLabel: "Recs",
-    icon: <Settings className="h-4 w-4" />,
+    id: "recruiter",
+    label: "Recruiter Review",
+    shortLabel: "Review",
+    icon: <Search className="h-4 w-4" />,
+  },
+  {
+    id: "suggestions",
+    label: "Suggestions",
+    shortLabel: "Tips",
+    icon: <Lightbulb className="h-4 w-4" />,
   },
   { id: "preview", label: "Preview", shortLabel: "Preview", icon: <Eye className="h-4 w-4" /> },
   {
