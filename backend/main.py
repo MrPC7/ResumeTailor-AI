@@ -19,6 +19,7 @@ from api.cover_letter import router as cover_letter_router
 from api.customize_resume import router as customize_resume_router
 from api.evaluate import router as evaluate_router
 from api.export import router as export_router
+from api.jobs import router as jobs_router
 from api.reevaluate import router as reevaluate_router
 from api.extract_resume import router as extract_resume_router
 from api.parse_resume import router as parse_resume_router
@@ -99,5 +100,6 @@ app.include_router(analyze_jd_router, prefix="/api")
 app.include_router(customize_resume_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
 app.include_router(evaluate_router, prefix="/api")
+app.include_router(jobs_router)
 app.include_router(cover_letter_router, prefix="/api")
 app.include_router(reevaluate_router, prefix="/api")

@@ -1,13 +1,12 @@
 """v2 evaluation endpoint — runs the full multi-agent pipeline."""
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Request
 
 from core.config import limiter, settings
 from schemas.evaluate import EvaluateJobResponse, EvaluateRequest, EvaluateResponse
-from schemas.job import Job
 from services.agents.resume_analyzer import resume_analyzer_agent
 from services.agents.jd_analyzer import jd_analyzer_agent
 from services.agents.recruiter import recruiter_agent
-from services.job_manager import JobNotFoundError, job_manager
+from services.job_manager import job_manager
 from services.orchestrator.evaluation_pipeline import (
     EvaluationPipeline,
 )
@@ -36,17 +35,6 @@ async def evaluate(
         body.raw_jd_text,
     )
     return EvaluateJobResponse(job_id=job.job_id)
-
-
-@router.get("/evaluate/{job_id}", response_model=Job)
-async def get_evaluation_job(job_id: str) -> Job:
-    try:
-        return job_manager.get_job(job_id)
-    except JobNotFoundError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Job not found.",
-        ) from exc
 
 
 async def _run_evaluation_job(

@@ -113,29 +113,6 @@ class TestEvaluateEndpointSuccess:
         assert call_kwargs["raw_jd_text"] == VALID_REQUEST["rawJdText"]
         assert callable(call_kwargs["progress_callback"])
 
-    @patch("api.evaluate._pipeline")
-    def test_get_evaluation_job_returns_tracked_lifecycle(
-        self,
-        mock_pipeline: AsyncMock,
-        client: TestClient,
-    ) -> None:
-        mock_pipeline.run = AsyncMock(return_value=SAMPLE_RESULT)
-
-        create_response = client.post("/api/evaluate", json=VALID_REQUEST)
-        job_id = create_response.json()["job_id"]
-
-        response = client.get(f"/api/evaluate/{job_id}")
-
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert data["job_id"] == job_id
-        assert data["status"] == "COMPLETED"
-        assert data["progress"] == 100
-        assert data["current_step"] == "Completed"
-        assert data["error"] is None
-        assert data["result"]["suggestions"] == []
-
-
 class TestEvaluateEndpointValidation:
     def test_missing_resume_text_returns_422(self, client: TestClient) -> None:
         response = client.post("/api/evaluate", json={"rawJdText": "Some JD"})
@@ -191,11 +168,3 @@ class TestEvaluateEndpointErrors:
         assert job.current_step == "Failed"
         assert job.error == "Agent failed: invalid json response"
         assert job.progress < 100
-
-    def test_get_evaluation_job_returns_404_for_missing_job(
-        self,
-        client: TestClient,
-    ) -> None:
-        response = client.get("/api/evaluate/missing")
-
-        assert response.status_code == status.HTTP_404_NOT_FOUND

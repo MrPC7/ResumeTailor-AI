@@ -35,3 +35,16 @@ class Job(BaseModel):
     result: Any | None = None
 
     model_config = ConfigDict(use_enum_values=True)
+
+
+class JobStatusResponse(BaseModel):
+    """Public API response for job status polling."""
+
+    job_id: str
+    status: JobStatus
+    progress: int = Field(ge=0, le=100)
+    current_step: str | None = None
+    error: str | None = None
+    result: Any | None = None
+
+    model_config = ConfigDict(use_enum_values=True)
