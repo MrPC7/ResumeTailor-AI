@@ -1,12 +1,13 @@
 """v2 evaluation endpoint — runs the full multi-agent pipeline."""
-from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 
 from core.config import limiter, settings
 from schemas.evaluate import EvaluateJobResponse, EvaluateRequest, EvaluateResponse
+from schemas.job import Job
 from services.agents.resume_analyzer import resume_analyzer_agent
 from services.agents.jd_analyzer import jd_analyzer_agent
 from services.agents.recruiter import recruiter_agent
-from services.job_manager import job_manager
+from services.job_manager import JobNotFoundError, job_manager
 from services.orchestrator.evaluation_pipeline import (
     EvaluationPipeline,
 )
@@ -37,20 +38,31 @@ async def evaluate(
     return EvaluateJobResponse(job_id=job.job_id)
 
 
+@router.get("/evaluate/{job_id}", response_model=Job)
+async def get_evaluation_job(job_id: str) -> Job:
+    try:
+        return job_manager.get_job(job_id)
+    except JobNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found.",
+        ) from exc
+
+
 async def _run_evaluation_job(
     job_id: str,
     raw_resume_text: str,
     raw_jd_text: str,
 ) -> None:
-    job_manager.update_progress(
-        job_id,
-        progress=5,
-        current_step="Starting evaluation",
-    )
+    async def update_job_progress(progress: int, current_step: str) -> None:
+        job_manager.update_progress(job_id, progress, current_step)
+
+    job_manager.update_progress(job_id, progress=5, current_step="Initializing")
     try:
         result = await _pipeline.run(
             raw_resume_text=raw_resume_text,
             raw_jd_text=raw_jd_text,
+            progress_callback=update_job_progress,
         )
     except Exception as exc:
         job_manager.fail_job(job_id, str(exc))

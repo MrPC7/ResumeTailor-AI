@@ -24,7 +24,7 @@ class JobManager:
         self._lock = RLock()
 
     def create_job(self) -> Job:
-        """Create and store a new pending job."""
+        """Create and store a new queued job."""
         job = Job(job_id=str(uuid4()))
         with self._lock:
             self._jobs[job.job_id] = job
@@ -45,15 +45,19 @@ class JobManager:
         current_step: str | None = None,
     ) -> Job:
         """Update progress and mark the job as running."""
-        updates: dict[str, Any] = {
-            "status": JobStatus.IN_PROGRESS,
-            "progress": progress,
-            "updated_at": utc_now(),
-            "error_message": None,
-        }
-        if current_step is not None:
-            updates["current_step"] = current_step
-        return self._update_job(job_id, **updates)
+        with self._lock:
+            job = self._get_job_unlocked(job_id)
+            Job.model_validate({**job.model_dump(), "progress": progress})
+            next_progress = max(progress, job.progress)
+            updates: dict[str, Any] = {
+                "status": JobStatus.PROCESSING,
+                "progress": next_progress,
+                "updated_at": utc_now(),
+                "error": None,
+            }
+            if current_step is not None and progress >= job.progress:
+                updates["current_step"] = current_step
+            return self._update_job_unlocked(job_id, **updates)
 
     def complete_job(self, job_id: str, result: Any) -> Job:
         """Mark a job as completed and attach its result."""
@@ -62,7 +66,8 @@ class JobManager:
             status=JobStatus.COMPLETED,
             progress=100,
             updated_at=utc_now(),
-            error_message=None,
+            current_step="Completed",
+            error=None,
             result=result,
         )
 
@@ -72,20 +77,27 @@ class JobManager:
             job_id,
             status=JobStatus.FAILED,
             updated_at=utc_now(),
-            error_message=error,
+            current_step="Failed",
+            error=error,
         )
 
     def _update_job(self, job_id: str, **updates: Any) -> Job:
         with self._lock:
-            job = self._jobs.get(job_id)
-            if job is None:
-                raise JobNotFoundError(job_id)
+            return self._update_job_unlocked(job_id, **updates)
 
-            data = job.model_dump()
-            data.update(updates)
-            updated_job = Job.model_validate(data)
-            self._jobs[job_id] = updated_job
-            return updated_job
+    def _get_job_unlocked(self, job_id: str) -> Job:
+        job = self._jobs.get(job_id)
+        if job is None:
+            raise JobNotFoundError(job_id)
+        return job
+
+    def _update_job_unlocked(self, job_id: str, **updates: Any) -> Job:
+        job = self._get_job_unlocked(job_id)
+        data = job.model_dump()
+        data.update(updates)
+        updated_job = Job.model_validate(data)
+        self._jobs[job_id] = updated_job
+        return updated_job
 
 
 job_manager = JobManager()

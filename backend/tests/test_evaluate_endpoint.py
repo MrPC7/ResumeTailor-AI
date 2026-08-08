@@ -82,7 +82,16 @@ class TestEvaluateEndpointSuccess:
     ) -> None:
         from api.evaluate import job_manager
 
-        mock_pipeline.run = AsyncMock(return_value=SAMPLE_RESULT)
+        async def run_pipeline(**kwargs: object) -> EvaluationResult:
+            progress_callback = kwargs["progress_callback"]
+            await progress_callback(25, "Resume extraction")
+            await progress_callback(45, "Resume analysis complete")
+            await progress_callback(60, "Job description analysis complete")
+            await progress_callback(80, "Recruiter review complete")
+            await progress_callback(95, "Suggestions generation")
+            return SAMPLE_RESULT
+
+        mock_pipeline.run = AsyncMock(side_effect=run_pipeline)
 
         response = client.post("/api/evaluate", json=VALID_REQUEST)
 
@@ -94,11 +103,37 @@ class TestEvaluateEndpointSuccess:
         job = job_manager.get_job(data["job_id"])
         assert job.status == JobStatus.COMPLETED
         assert job.progress == 100
+        assert job.current_step == "Completed"
+        assert job.error is None
         assert job.result["candidateProfile"]["skills"][0]["name"] == "Python"
-        mock_pipeline.run.assert_awaited_once_with(
-            raw_resume_text=VALID_REQUEST["rawResumeText"],
-            raw_jd_text=VALID_REQUEST["rawJdText"],
-        )
+        assert job.result["suggestions"] == []
+
+        call_kwargs = mock_pipeline.run.await_args.kwargs
+        assert call_kwargs["raw_resume_text"] == VALID_REQUEST["rawResumeText"]
+        assert call_kwargs["raw_jd_text"] == VALID_REQUEST["rawJdText"]
+        assert callable(call_kwargs["progress_callback"])
+
+    @patch("api.evaluate._pipeline")
+    def test_get_evaluation_job_returns_tracked_lifecycle(
+        self,
+        mock_pipeline: AsyncMock,
+        client: TestClient,
+    ) -> None:
+        mock_pipeline.run = AsyncMock(return_value=SAMPLE_RESULT)
+
+        create_response = client.post("/api/evaluate", json=VALID_REQUEST)
+        job_id = create_response.json()["job_id"]
+
+        response = client.get(f"/api/evaluate/{job_id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["job_id"] == job_id
+        assert data["status"] == "COMPLETED"
+        assert data["progress"] == 100
+        assert data["current_step"] == "Completed"
+        assert data["error"] is None
+        assert data["result"]["suggestions"] == []
 
 
 class TestEvaluateEndpointValidation:
@@ -153,4 +188,14 @@ class TestEvaluateEndpointErrors:
         assert response.status_code == status.HTTP_200_OK
         job = job_manager.get_job(response.json()["job_id"])
         assert job.status == JobStatus.FAILED
-        assert job.error_message == "Agent failed: invalid json response"
+        assert job.current_step == "Failed"
+        assert job.error == "Agent failed: invalid json response"
+        assert job.progress < 100
+
+    def test_get_evaluation_job_returns_404_for_missing_job(
+        self,
+        client: TestClient,
+    ) -> None:
+        response = client.get("/api/evaluate/missing")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND

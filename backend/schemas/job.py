@@ -11,10 +11,10 @@ from pydantic import BaseModel, ConfigDict, Field
 class JobStatus(str, Enum):
     """Lifecycle states for in-memory jobs."""
 
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
+    QUEUED = "QUEUED"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
 def utc_now() -> datetime:
@@ -26,12 +26,12 @@ class Job(BaseModel):
     """Represents asynchronous work tracked by the backend."""
 
     job_id: str
-    status: JobStatus = JobStatus.PENDING
+    status: JobStatus = JobStatus.QUEUED
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
     progress: int = Field(default=0, ge=0, le=100)
     current_step: str | None = None
-    error_message: str | None = None
+    error: str | None = None
     result: Any | None = None
 
     model_config = ConfigDict(use_enum_values=True)

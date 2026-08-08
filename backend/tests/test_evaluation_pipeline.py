@@ -247,6 +247,37 @@ class TestEvaluationPipelineIntegration:
         assert "Senior Backend Engineer" in recruiter_prompt
         assert "Kubernetes" in recruiter_prompt
 
+    @pytest.mark.asyncio
+    async def test_pipeline_reports_meaningful_progress_updates(self) -> None:
+        """Pipeline progress callbacks follow the evaluation stages."""
+        pipeline, _ = _build_pipeline([
+            RESUME_ANALYZER_LLM_RESPONSE,
+            JD_ANALYZER_LLM_RESPONSE,
+            RECRUITER_LLM_RESPONSE,
+        ])
+        progress_updates: list[tuple[int, str]] = []
+
+        def record_progress(progress: int, current_step: str) -> None:
+            progress_updates.append((progress, current_step))
+
+        await pipeline.run(
+            raw_resume_text=SAMPLE_RESUME,
+            raw_jd_text=SAMPLE_JD,
+            progress_callback=record_progress,
+        )
+
+        assert progress_updates == [
+            (10, "Initializing"),
+            (25, "Resume extraction"),
+            (35, "Resume analysis"),
+            (45, "Resume analysis complete"),
+            (55, "Job description analysis"),
+            (60, "Job description analysis complete"),
+            (70, "Recruiter review"),
+            (80, "Recruiter review complete"),
+            (95, "Suggestions generation"),
+        ]
+
 
 # ---------------------------------------------------------------------------
 # Input validation tests

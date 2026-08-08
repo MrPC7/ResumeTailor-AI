@@ -5,7 +5,7 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Awaitable, Callable
 
 from core.config import settings
 from schemas.agent_models import CandidateProfile, JobProfile, RecruiterEvaluation
@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Prompt version for traceability in logs and monitoring.
 PIPELINE_VERSION = "v2.1.0"
+ProgressCallback = Callable[[int, str], Awaitable[None] | None]
 
 
 class PipelineError(Exception):
@@ -76,6 +77,7 @@ class EvaluationPipeline:
         self,
         raw_resume_text: str,
         raw_jd_text: str,
+        progress_callback: ProgressCallback | None = None,
     ) -> EvaluationResult:
         """Execute the full evaluation pipeline with timeout protection.
 
@@ -89,6 +91,7 @@ class EvaluationPipeline:
             If any agent fails during execution.
         """
         self._validate_inputs(raw_resume_text, raw_jd_text)
+        await self._notify_progress(progress_callback, 10, "Initializing")
 
         logger.info(
             "Pipeline started",
@@ -104,7 +107,7 @@ class EvaluationPipeline:
 
         try:
             result = await asyncio.wait_for(
-                self._execute(raw_resume_text, raw_jd_text),
+                self._execute(raw_resume_text, raw_jd_text, progress_callback),
                 timeout=self._timeout,
             )
         except asyncio.TimeoutError:
@@ -137,6 +140,7 @@ class EvaluationPipeline:
         self,
         raw_resume_text: str,
         raw_jd_text: str,
+        progress_callback: ProgressCallback | None = None,
     ) -> EvaluationResult:
         """Internal pipeline execution without timeout wrapping."""
         context: dict[str, Any] = {
@@ -144,16 +148,70 @@ class EvaluationPipeline:
             "raw_jd_text": raw_jd_text,
         }
 
+        await self._notify_progress(
+            progress_callback,
+            25,
+            "Resume extraction",
+        )
+
         # Step 1: Extract CandidateProfile
+        await self._notify_progress(
+            progress_callback,
+            35,
+            "Resume analysis",
+        )
         context = await self._run_agent(self._resume_analyzer, context, step=1)
+        await self._notify_progress(
+            progress_callback,
+            45,
+            "Resume analysis complete",
+        )
 
         # Step 2: Extract JobProfile
+        await self._notify_progress(
+            progress_callback,
+            55,
+            "Job description analysis",
+        )
         context = await self._run_agent(self._jd_analyzer, context, step=2)
+        await self._notify_progress(
+            progress_callback,
+            60,
+            "Job description analysis complete",
+        )
 
         # Step 3: Recruiter Evaluation
+        await self._notify_progress(
+            progress_callback,
+            70,
+            "Recruiter review",
+        )
         context = await self._run_agent(self._recruiter, context, step=3)
+        await self._notify_progress(
+            progress_callback,
+            80,
+            "Recruiter review complete",
+        )
+        await self._notify_progress(
+            progress_callback,
+            95,
+            "Suggestions generation",
+        )
 
         return self._build_result(context)
+
+    async def _notify_progress(
+        self,
+        progress_callback: ProgressCallback | None,
+        progress: int,
+        current_step: str,
+    ) -> None:
+        if progress_callback is None:
+            return
+
+        result = progress_callback(progress, current_step)
+        if result is not None:
+            await result
 
     async def _run_agent(
         self, agent: Agent, context: dict[str, Any], step: int
