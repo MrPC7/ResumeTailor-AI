@@ -28,3 +28,7 @@ class EvaluateResponse(BaseModel):
     suggestions: list[Suggestion] = Field(default_factory=list)
 
     model_config = ConfigDict(populate_by_name=True, by_alias=True)
+
+
+class EvaluateJobResponse(BaseModel):
+    job_id: str

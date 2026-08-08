@@ -1,7 +1,6 @@
 """Tests for POST /api/evaluate endpoint."""
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -10,24 +9,17 @@ from fastapi.testclient import TestClient
 
 from schemas.agent_models import (
     CandidateProfile,
+    ExperienceRequirement,
     JobProfile,
     RecruiterEvaluation,
-    Skill,
-    WorkExperience,
     RequiredSkill,
     Responsibility,
-    ExperienceRequirement,
+    Skill,
+    WorkExperience,
 )
-from services.orchestrator.evaluation_pipeline import (
-    EvaluationResult,
-    PipelineError,
-    PipelineInputError,
-)
+from schemas.job import JobStatus
+from services.orchestrator.evaluation_pipeline import EvaluationResult, PipelineError
 
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
 
 SAMPLE_CANDIDATE = CandidateProfile(
     skills=[Skill(name="Python", category="Programming Language")],
@@ -77,74 +69,36 @@ VALID_REQUEST = {
 @pytest.fixture
 def client() -> TestClient:
     from main import app
+
     return TestClient(app)
-
-
-# ---------------------------------------------------------------------------
-# Success tests
-# ---------------------------------------------------------------------------
 
 
 class TestEvaluateEndpointSuccess:
     @patch("api.evaluate._pipeline")
-    def test_returns_200_with_full_result(
-        self, mock_pipeline: AsyncMock, client: TestClient
+    def test_returns_job_id_and_starts_background_evaluation(
+        self,
+        mock_pipeline: AsyncMock,
+        client: TestClient,
     ) -> None:
+        from api.evaluate import job_manager
+
         mock_pipeline.run = AsyncMock(return_value=SAMPLE_RESULT)
 
         response = client.post("/api/evaluate", json=VALID_REQUEST)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "candidateProfile" in data
-        assert "jobProfile" in data
-        assert "evaluation" in data
+        assert list(data.keys()) == ["job_id"]
+        assert data["job_id"]
 
-    @patch("api.evaluate._pipeline")
-    def test_response_contains_candidate_profile(
-        self, mock_pipeline: AsyncMock, client: TestClient
-    ) -> None:
-        mock_pipeline.run = AsyncMock(return_value=SAMPLE_RESULT)
-
-        response = client.post("/api/evaluate", json=VALID_REQUEST)
-        data = response.json()
-
-        profile = data["candidateProfile"]
-        assert profile["skills"][0]["name"] == "Python"
-        assert profile["total_years_experience"] == 4.0
-
-    @patch("api.evaluate._pipeline")
-    def test_response_contains_job_profile(
-        self, mock_pipeline: AsyncMock, client: TestClient
-    ) -> None:
-        mock_pipeline.run = AsyncMock(return_value=SAMPLE_RESULT)
-
-        response = client.post("/api/evaluate", json=VALID_REQUEST)
-        data = response.json()
-
-        job = data["jobProfile"]
-        assert job["role"] == "Backend Engineer"
-        assert job["seniority"] == "Senior"
-
-    @patch("api.evaluate._pipeline")
-    def test_response_contains_evaluation(
-        self, mock_pipeline: AsyncMock, client: TestClient
-    ) -> None:
-        mock_pipeline.run = AsyncMock(return_value=SAMPLE_RESULT)
-
-        response = client.post("/api/evaluate", json=VALID_REQUEST)
-        data = response.json()
-
-        evaluation = data["evaluation"]
-        assert evaluation["match_level"] == "good_match"
-        assert evaluation["hiring_confidence"] == 70
-        assert len(evaluation["strengths"]) == 1
-        assert len(evaluation["gaps"]) == 1
-
-
-# ---------------------------------------------------------------------------
-# Validation tests
-# ---------------------------------------------------------------------------
+        job = job_manager.get_job(data["job_id"])
+        assert job.status == JobStatus.COMPLETED
+        assert job.progress == 100
+        assert job.result["candidateProfile"]["skills"][0]["name"] == "Python"
+        mock_pipeline.run.assert_awaited_once_with(
+            raw_resume_text=VALID_REQUEST["rawResumeText"],
+            raw_jd_text=VALID_REQUEST["rawJdText"],
+        )
 
 
 class TestEvaluateEndpointValidation:
@@ -157,17 +111,23 @@ class TestEvaluateEndpointValidation:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     def test_empty_resume_text_returns_422(self, client: TestClient) -> None:
-        response = client.post("/api/evaluate", json={
-            "rawResumeText": "",
-            "rawJdText": "Some JD",
-        })
+        response = client.post(
+            "/api/evaluate",
+            json={
+                "rawResumeText": "",
+                "rawJdText": "Some JD",
+            },
+        )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     def test_empty_jd_text_returns_422(self, client: TestClient) -> None:
-        response = client.post("/api/evaluate", json={
-            "rawResumeText": "Some resume",
-            "rawJdText": "",
-        })
+        response = client.post(
+            "/api/evaluate",
+            json={
+                "rawResumeText": "Some resume",
+                "rawJdText": "",
+            },
+        )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     def test_empty_body_returns_422(self, client: TestClient) -> None:
@@ -175,55 +135,22 @@ class TestEvaluateEndpointValidation:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-# ---------------------------------------------------------------------------
-# Error handling tests
-# ---------------------------------------------------------------------------
-
-
 class TestEvaluateEndpointErrors:
     @patch("api.evaluate._pipeline")
-    def test_pipeline_input_error_returns_422(
-        self, mock_pipeline: AsyncMock, client: TestClient
+    def test_pipeline_error_fails_background_job(
+        self,
+        mock_pipeline: AsyncMock,
+        client: TestClient,
     ) -> None:
-        mock_pipeline.run = AsyncMock(
-            side_effect=PipelineInputError("raw_resume_text must be non-empty")
-        )
+        from api.evaluate import job_manager
 
-        response = client.post("/api/evaluate", json=VALID_REQUEST)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    @patch("api.evaluate._pipeline")
-    def test_pipeline_error_api_returns_503(
-        self, mock_pipeline: AsyncMock, client: TestClient
-    ) -> None:
-        mock_pipeline.run = AsyncMock(
-            side_effect=PipelineError("Agent failed: LLM API error during evaluation")
-        )
-
-        response = client.post("/api/evaluate", json=VALID_REQUEST)
-        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
-
-    @patch("api.evaluate._pipeline")
-    def test_pipeline_error_parse_returns_502(
-        self, mock_pipeline: AsyncMock, client: TestClient
-    ) -> None:
         mock_pipeline.run = AsyncMock(
             side_effect=PipelineError("Agent failed: invalid json response")
         )
 
         response = client.post("/api/evaluate", json=VALID_REQUEST)
-        assert response.status_code == status.HTTP_502_BAD_GATEWAY
 
-    @patch("api.evaluate._pipeline")
-    def test_unexpected_error_returns_500(
-        self, mock_pipeline: AsyncMock, client: TestClient
-    ) -> None:
-        mock_pipeline.run = AsyncMock(
-            side_effect=RuntimeError("something unexpected")
-        )
-
-        response = client.post("/api/evaluate", json=VALID_REQUEST)
-        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-
-
-
+        assert response.status_code == status.HTTP_200_OK
+        job = job_manager.get_job(response.json()["job_id"])
+        assert job.status == JobStatus.FAILED
+        assert job.error_message == "Agent failed: invalid json response"

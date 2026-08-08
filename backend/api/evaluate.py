@@ -1,16 +1,14 @@
 """v2 evaluation endpoint — runs the full multi-agent pipeline."""
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Request
 
 from core.config import limiter, settings
-from schemas.evaluate import EvaluateRequest, EvaluateResponse
+from schemas.evaluate import EvaluateJobResponse, EvaluateRequest, EvaluateResponse
 from services.agents.resume_analyzer import resume_analyzer_agent
 from services.agents.jd_analyzer import jd_analyzer_agent
 from services.agents.recruiter import recruiter_agent
+from services.job_manager import job_manager
 from services.orchestrator.evaluation_pipeline import (
     EvaluationPipeline,
-    PipelineError,
-    PipelineInputError,
-    PipelineTimeoutError,
 )
 
 router = APIRouter(tags=["evaluate"])
@@ -22,48 +20,46 @@ _pipeline = EvaluationPipeline(
 )
 
 
-@router.post("/evaluate", response_model=EvaluateResponse)
+@router.post("/evaluate", response_model=EvaluateJobResponse)
 @limiter.limit(settings.RATE_LIMIT_LLM)
-async def evaluate(request: Request, body: EvaluateRequest) -> EvaluateResponse:
+async def evaluate(
+    request: Request,
+    body: EvaluateRequest,
+    background_tasks: BackgroundTasks,
+) -> EvaluateJobResponse:
+    job = job_manager.create_job()
+    background_tasks.add_task(
+        _run_evaluation_job,
+        job.job_id,
+        body.raw_resume_text,
+        body.raw_jd_text,
+    )
+    return EvaluateJobResponse(job_id=job.job_id)
+
+
+async def _run_evaluation_job(
+    job_id: str,
+    raw_resume_text: str,
+    raw_jd_text: str,
+) -> None:
+    job_manager.update_progress(
+        job_id,
+        progress=5,
+        current_step="Starting evaluation",
+    )
     try:
         result = await _pipeline.run(
-            raw_resume_text=body.raw_resume_text,
-            raw_jd_text=body.raw_jd_text,
+            raw_resume_text=raw_resume_text,
+            raw_jd_text=raw_jd_text,
         )
-    except PipelineInputError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
-        ) from exc
-    except PipelineTimeoutError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Evaluation timed out. Please try again.",
-        ) from exc
-    except PipelineError as exc:
-        message = str(exc).lower()
-        status_code = (
-            status.HTTP_503_SERVICE_UNAVAILABLE
-            if "api error" in message or "timed out" in message or "provider" in message
-            else status.HTTP_502_BAD_GATEWAY
-        )
-        raise HTTPException(
-            status_code=status_code,
-            detail=(
-                "AI service is temporarily unavailable. Please try again."
-                if status_code == status.HTTP_503_SERVICE_UNAVAILABLE
-                else "AI evaluation pipeline returned an invalid response. Please try again."
-            ),
-        ) from exc
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to complete evaluation.",
-        ) from exc
+        job_manager.fail_job(job_id, str(exc))
+        return
 
-    return EvaluateResponse(
+    response = EvaluateResponse(
         candidate_profile=result.candidate_profile,
         job_profile=result.job_profile,
         evaluation=result.evaluation,
         suggestions=result.evaluation.suggestions,
     )
+    job_manager.complete_job(job_id, response.model_dump(by_alias=True))
